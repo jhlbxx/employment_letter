@@ -10,7 +10,7 @@ export const templates = [
       en: 'Used for background checks, bank account opening, or rental verification.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'passportId', label: { zh: '身份证/护照号', en: 'ID/Passport No.' }, placeholder: 'E12345678' },
       { id: 'role', label: { zh: '当前职位', en: 'Current Position' }, placeholder: 'Senior Cook' },
       { id: 'startDate', label: { zh: '入职日期', en: 'Start Date' }, type: 'date' },
@@ -56,7 +56,7 @@ Dave's Fish & Chips`
       en: 'Used for employees applying for tourist or business visas.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'passportNo', label: { zh: '护照号码', en: 'Passport No.' }, placeholder: 'G12345678' },
       { id: 'destination', label: { zh: '目的地国家', en: 'Destination Country' }, placeholder: 'United Kingdom' },
       { id: 'leaveStart', label: { zh: '休假开始日期', en: 'Leave Start Date' }, type: 'date' },
@@ -108,7 +108,7 @@ Dave's Fish & Chips`
       en: 'Provides detailed salary and job stability verification for loans.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'monthlyBase', label: { zh: '月基本工资', en: 'Monthly Base Salary' }, placeholder: '5,000' },
       { id: 'annualBonus', label: { zh: '年终奖金', en: 'Annual Bonus' }, placeholder: '10,000' },
       { id: 'jobTitle', label: { zh: '职级/职位', en: 'Job Title' }, placeholder: 'Head Chef' },
@@ -159,7 +159,7 @@ Dave's Fish & Chips`
       en: 'Formally announces promotion and compensation changes.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'oldTitle', label: { zh: '原职位', en: 'Old Title' }, placeholder: 'Cook' },
       { id: 'newTitle', label: { zh: '新职位', en: 'New Title' }, placeholder: 'Head Chef' },
       { id: 'effectiveDate', label: { zh: '生效日期', en: 'Effective Date' }, type: 'date' },
@@ -202,7 +202,7 @@ Dave's Fish & Chips`
       en: 'Formally responds to resignation and confirms the last working day.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'lastDay', label: { zh: '最后工作日', en: 'Last Working Day' }, type: 'date' },
       { id: 'manager', label: { zh: '部门经理', en: 'Department Manager' }, placeholder: 'Dave Smith' },
     ],
@@ -244,7 +244,7 @@ Dave's Fish & Chips`
       en: 'Formal termination of employment including compensation and notice details.'
     },
     fields: [
-      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'John Doe' },
+      { id: 'employeeName', label: { zh: '员工姓名', en: 'Employee Name' }, placeholder: 'Dave Jia' },
       { id: 'terminationDate', label: { zh: '解雇日期', en: 'Termination Date' }, type: 'date' },
       { id: 'noticePeriod', label: { zh: '通知期', en: 'Notice Period' }, placeholder: '30 days / 1 month' },
       { id: 'statutoryComp', label: { zh: '法定赔偿金', en: 'Statutory Compensation' }, placeholder: '5,000' },
