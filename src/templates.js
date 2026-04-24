@@ -22,7 +22,7 @@ export const templates = [
 This is to certify that **{{employeeName}}** (ID/Passport No: {{passportId}}) is currently employed by **Dave's Fish & Chips** as a **{{role}}**.
 
 **{{employeeName}}** joined our company on **{{startDate}}** and is currently a full-time, permanent employee in good standing.
-{{#salary}}Their current annual gross salary is **${{salary}}**.{{/salary}}
+{{#salary}}Their current annual gross salary is **\${{salary}}**.{{/salary}}
 
 Please do not hesitate to contact our HR department if you require any further information.
 
@@ -35,7 +35,7 @@ Dave's Fish & Chips`,
 兹证明 **{{employeeName}}**（身份证/护照号：{{passportId}}）现就职于 **Dave's Fish & Chips**，担任 **{{role}}** 一职。
 
 **{{employeeName}}** 自 **{{startDate}}** 起加入我司，目前为全职正式员工，表现良好。
-{{#salary}}其当前的年薪总额为 **${{salary}}**。{{/salary}}
+{{#salary}}其当前的年薪总额为 **\${{salary}}**。{{/salary}}
 
 如需了解更多信息，请随时联系我司人力资源部。
 
@@ -121,8 +121,8 @@ Subject: Employment and Income Verification for **{{employeeName}}**
 We confirm that **{{employeeName}}** has been employed with **Dave's Fish & Chips** in the capacity of **{{jobTitle}}**.
 
 Their current compensation details are as follows:
-- Monthly Base Salary: **${{monthlyBase}}**
-- Annual Target Bonus: **${{annualBonus}}**
+- Monthly Base Salary: **\${{monthlyBase}}**
+- Annual Target Bonus: **\${{annualBonus}}**
 
 We consider **{{employeeName}}**'s employment to be stable and are pleased with their performance. This information is provided in confidence at the request of our employee.
 
@@ -137,8 +137,8 @@ Dave's Fish & Chips`,
 兹证明 **{{employeeName}}** 目前在 **Dave's Fish & Chips** 担任 **{{jobTitle}}** 一职。
 
 其当前的薪酬细节如下：
-- 月基本工资：**${{monthlyBase}}**
-- 年度目标奖金：**${{annualBonus}}**
+- 月基本工资：**\${{monthlyBase}}**
+- 年度目标奖金：**\${{annualBonus}}**
 
 我司认为 **{{employeeName}}** 的职业前景稳定，对其工作表现非常满意。本证明系应员工要求出具。
 
@@ -258,8 +258,8 @@ We regret to inform you that **Dave's Fish & Chips** has decided to terminate yo
 
 In accordance with your employment agreement and local labor laws:
 - **Notice Period:** You will serve a notice period of **{{noticePeriod}}**.
-- **Statutory Compensation:** A sum of **${{statutoryComp}}** will be paid as per legal requirements.
-- **Extra Compensation:** An additional ex-gratia payment of **${{extraComp}}** will be provided.
+- **Statutory Compensation:** A sum of **\${{statutoryComp}}** will be paid as per legal requirements.
+- **Extra Compensation:** An additional ex-gratia payment of **\${{extraComp}}** will be provided.
 
 {{#reason}}**Reason for Termination:** {{reason}}{{/reason}}
 
@@ -275,8 +275,8 @@ Dave's Fish & Chips`,
 
 根据劳动合同约定及现行劳动法律：
 - **通知期**：你的通知期为 **{{noticePeriod}}**。
-- **法定赔偿金**：公司将依法向你支付 **${{statutoryComp}}**。
-- **额外赔偿金**：公司将额外向你支付 **${{extraComp}}** 作为补偿。
+- **法定赔偿金**：公司将依法向你支付 **\${{statutoryComp}}**。
+- **额外赔偿金**：公司将额外向你支付 **\${{extraComp}}** 作为补偿。
 
 {{#reason}}**解除劳动关系原因**：{{reason}}{{/reason}}
 
