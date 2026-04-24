@@ -277,23 +277,25 @@ body, html {
 /* ── Letter Paper ── */
 .letter-paper {
   width: 8.5in;
-  min-height: 11in;
+  min-height: 10.9in;
   height: fit-content;
   flex-shrink: 0;
   background: white;
-  padding: 0.9in 1in 1.1in 1in;
+  padding: 1in; /* Standard business margins */
   box-shadow: var(--shadow-lg);
   box-sizing: border-box;
   position: relative;
+  page-break-inside: initial;
 }
 
 .letter-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 52px;
+  margin-bottom: 30px; /* Reduced from 52px */
   border-bottom: 2px solid #1e3a8a;
-  padding-bottom: 18px;
+  padding-bottom: 12px;
+  page-break-inside: avoid;
 }
 
 .letter-logo-text {
@@ -311,16 +313,18 @@ body, html {
 }
 
 .letter-content {
-  font-family: 'Times New Roman', serif;
+  font-family: 'Calibri', 'Inter', sans-serif;
   font-size: 11pt;
-  line-height: 1.75;
+  line-height: 1.15;
+  text-align: left;
   white-space: pre-wrap;
   color: #1a1a1a;
-  margin-bottom: 60px;
+  margin-bottom: 50px;
 }
 
 .letter-footer {
-  margin-top: 40px;
+  margin-top: 30px; /* Reduced from 40px */
+  page-break-inside: avoid;
 }
 
 .signature-space {

@@ -98,7 +98,8 @@ function App() {
           margin: 0,
           filename: `${filename}.pdf`,
           image: { type: 'jpeg', quality: 1.0 },
-          html2canvas: { scale: 4, useCORS: true, letterRendering: true },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+          html2canvas: { scale: 3, useCORS: true, letterRendering: true },
           jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         })
         .from(letterRef.current)
