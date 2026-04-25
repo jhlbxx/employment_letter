@@ -41,14 +41,42 @@ body, html {
   z-index: 10;
   box-shadow: var(--shadow-md);
   overflow-y: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed {
+  width: 0;
+  padding: 0;
+  border-right: none;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .logo-section {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 36px;
   flex-shrink: 0;
+}
+
+.toggle-sidebar-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-sidebar-btn:hover {
+  background: #f1f5f9;
+  color: var(--primary);
 }
 
 .logo-icon {
@@ -122,12 +150,26 @@ body, html {
   line-height: 1.4;
 }
 
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.version-info {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 /* ── Main layout ── */
 .main-content {
   flex: 1;
   display: flex;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Editor Pane ── */
@@ -141,12 +183,48 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 5;
+}
+
+.editor-pane.collapsed {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-right: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .editor-header h2 {
   font-size: 1.15rem;
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0;
+}
+
+.toggle-editor-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-editor-btn:hover {
+  background: #f1f5f9;
+  color: var(--primary);
 }
 
 /* ── Language Toggle ── */
@@ -264,6 +342,40 @@ body, html {
   align-items: center;
   gap: 20px;
   min-width: 0;
+  position: relative;
+}
+
+.expand-handle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 60px;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.sidebar-handle {
+  top: 35%;
+  background: var(--primary-light);
+}
+
+.expand-handle:hover {
+  background: var(--primary);
+  transform: translateY(-50%) scaleX(1.1);
+}
+
+.sidebar-handle:hover {
+  background: var(--primary-light);
 }
 
 .controls {

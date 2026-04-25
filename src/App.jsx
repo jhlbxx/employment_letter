@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { templates } from './templates';
-import { Fish, Download, Printer } from 'lucide-react';
+import { Fish, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import pkg from '../package.json';
 
 // ── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -69,6 +70,8 @@ function App() {
   const [formData, setFormData] = useState({});
   const [lang, setLang] = useState('zh');
   const [exporting, setExporting] = useState(false);
+  const [editorCollapsed, setEditorCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const letterRef = useRef();
 
   // Reset form fields when template changes, but keep values for shared field IDs
@@ -121,10 +124,19 @@ function App() {
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
 
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="logo-section">
-          <div className="logo-icon"><Fish size={22} /></div>
-          <div className="company-name">DAVE'S<br />FISH &amp; CHIPS</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="logo-icon"><Fish size={22} /></div>
+            <div className="company-name">DAVE'S<br />FISH &amp; CHIPS</div>
+          </div>
+          <button
+            className="toggle-sidebar-btn"
+            onClick={() => setSidebarCollapsed(true)}
+            title="Collapse Sidebar / 收起侧边栏"
+          >
+            <ChevronLeft size={20} />
+          </button>
         </div>
 
         <nav className="template-list">
@@ -141,15 +153,40 @@ function App() {
             </div>
           ))}
         </nav>
+
+        <div className="sidebar-footer">
+          <div className="version-info">
+            Version / 版本: v{pkg.version}
+          </div>
+          <div className="version-info" style={{ marginTop: '4px' }}>
+            Last Updated / 更新日期: 2026-04-25
+          </div>
+        </div>
       </aside>
 
       {/* ── Main ── */}
       <main className="main-content">
+        {sidebarCollapsed && (
+          <div
+            className="expand-handle sidebar-handle"
+            onClick={() => setSidebarCollapsed(false)}
+            title="Expand Sidebar / 展开侧边栏"
+          >
+            <ChevronRight size={16} />
+          </div>
+        )}
 
         {/* Editor */}
-        <section className="editor-pane">
+        <section className={`editor-pane ${editorCollapsed ? 'collapsed' : ''}`}>
           <div className="editor-header">
             <h2>Editor / 编辑</h2>
+            <button
+              className="toggle-editor-btn"
+              onClick={() => setEditorCollapsed(true)}
+              title="Collapse Editor / 收起编辑"
+            >
+              <ChevronLeft size={20} />
+            </button>
           </div>
 
           <div className="lang-toggle">
@@ -195,6 +232,15 @@ function App() {
 
         {/* Preview */}
         <section className="preview-pane">
+          {editorCollapsed && (
+            <div
+              className="expand-handle"
+              onClick={() => setEditorCollapsed(false)}
+              title="Expand Editor / 展开编辑"
+            >
+              <ChevronRight size={16} />
+            </div>
+          )}
           <div className="controls">
             <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
               <Printer size={16} /> Print / 打印
