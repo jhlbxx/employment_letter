@@ -1,6 +1,7 @@
 export const templates = [
   {
     id: 'employment-verification',
+    category: 'employment',
     name: {
       zh: '通用在职证明',
       en: 'General Employment Verification'
@@ -47,6 +48,7 @@ Dave's Fish & Chips`
   },
   {
     id: 'visa-support',
+    category: 'employment',
     name: {
       zh: '签证申请支持信',
       en: 'Visa Application Support'
@@ -99,6 +101,7 @@ Dave's Fish & Chips`
   },
   {
     id: 'mortgage-reference',
+    category: 'employment',
     name: {
       zh: '房贷/购房参考信',
       en: 'Mortgage/Housing Reference'
@@ -150,6 +153,7 @@ Dave's Fish & Chips`
   },
   {
     id: 'promotion-letter',
+    category: 'notice',
     name: {
       zh: '岗位晋升通知函',
       en: 'Promotion Notification'
@@ -193,6 +197,7 @@ Dave's Fish & Chips`
   },
   {
     id: 'resignation-acceptance',
+    category: 'termination',
     name: {
       zh: '离职申请接受函',
       en: 'Resignation Acceptance'
@@ -235,6 +240,7 @@ Dave's Fish & Chips`
   },
   {
     id: 'termination-notice',
+    category: 'termination',
     name: {
       zh: '劳动合同解除通知书',
       en: 'Notice of Termination'

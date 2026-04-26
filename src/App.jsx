@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { templates } from './templates';
-import { Fish, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Fish, Download, Printer, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import pkg from '../package.json';
 import { Languages } from 'lucide-react';
 
 const UI_STRINGS = {
   zh: {
     templates: "Templates / 模板",
-    editor: "Editor / 编辑",
+    editor: "内容编辑",
     langZh: "仅中文",
     langEn: "仅英文",
     langDual: "中英对照",
@@ -17,6 +17,10 @@ const UI_STRINGS = {
     version: "Version / 版本",
     updated: "Last Updated / 更新日期",
     uiLangLabel: "界面语言 / Language",
+    letterLangLabel: "信件语言",
+    catEmployment: "雇主信类",
+    catNotice: "通知与申请类",
+    catTermination: "离职与解雇类",
   },
   en: {
     templates: "Templates",
@@ -30,8 +34,36 @@ const UI_STRINGS = {
     version: "Version",
     updated: "Last Updated",
     uiLangLabel: "界面语言 / Language",
+    letterLangLabel: "Letter Language",
+    catEmployment: "Employment Letters",
+    catNotice: "Notices & Requests",
+    catTermination: "Separation & Termination",
   }
 };
+
+const CURRENCY_FIELDS = ['salary', 'monthlyBase', 'annualBonus', 'statutoryComp', 'extraComp'];
+const UNIT_FIELDS = ['noticePeriod'];
+
+const UNIT_TRANSLATIONS = {
+  zh: { day: '天', month: '个月' },
+  en: { day: 'day(s)', month: 'month(s)' }
+};
+
+/** Formats a number string with commas and 2 decimal places for the final letter */
+function formatToCurrency(val) {
+  if (!val) return val;
+  const num = parseFloat(val.toString().replace(/,/g, ''));
+  if (isNaN(num)) return val;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Formats a number string with commas only for display in the input field */
+function formatForInput(val) {
+  if (!val) return '';
+  const parts = val.toString().replace(/,/g, '').split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
 
 // ── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -62,7 +94,7 @@ class ErrorBoundary extends React.Component {
 const sidebarLang = (lang) => (lang === 'dual' ? 'zh' : lang);
 
 /** Replace {{key}} vars and {{#key}}...{{/key}} conditional blocks, then clean up leftovers */
-function renderTemplate(contentTemplate, formData) {
+function renderTemplate(contentTemplate, formData, lang) {
   if (!contentTemplate) return '';
   let out = contentTemplate;
 
@@ -78,10 +110,31 @@ function renderTemplate(contentTemplate, formData) {
 
   // 2. Replace simple variables
   Object.keys(formData).forEach((key) => {
-    const val = formData[key]
+    let val = formData[key]
       ? formData[key]
-      : `<span style="color:#aaa">[ ${key} ]</span>`;
-    out = out.split(`{{${key}}}`).join(val);
+      : '<span style="color:#aaa">[ ' + key + ' ]</span>';
+    
+    // Apply currency formatting if applicable
+    if (formData[key] && CURRENCY_FIELDS.includes(key)) {
+      val = formatToCurrency(val);
+    }
+    
+    // Apply unit translation for specific fields (e.g. Notice Period)
+    if (UNIT_FIELDS.includes(key)) {
+      const num = formData[key + '_num'] || '';
+      const unitKey = formData[key + '_unit'] || 'day';
+      if (num) {
+        // Get target language for translation (lang here is the 'inner' lang during dual rendering)
+        const targetLang = lang === 'dual' ? 'en' : lang; // This is slightly tricky, see below
+        // Actually, the 'lang' variable in scope here is the one passed to renderTemplate(..., lang)
+        const unitLabel = UNIT_TRANSLATIONS[lang] ? UNIT_TRANSLATIONS[lang][unitKey] : UNIT_TRANSLATIONS['en'][unitKey];
+        val = num + ' ' + unitLabel;
+      } else {
+        val = '<span style="color:#aaa">[ ' + key + ' ]</span>';
+      }
+    }
+    
+    out = out.split('{{' + key + '}}').join(val);
   });
 
   // 3. Clean up any leftover unreplaced placeholders
@@ -103,7 +156,13 @@ function App() {
   const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uiLang, setUiLang] = useState('zh');
+  const [expandedCats, setExpandedCats] = useState([]);
   const letterRef = useRef();
+
+  // Sync HTML lang attribute for native elements like date inputs
+  useEffect(() => {
+    document.documentElement.lang = uiLang;
+  }, [uiLang]);
 
   // Reset form fields when template changes, but keep values for shared field IDs
   useEffect(() => {
@@ -190,17 +249,43 @@ function App() {
 
         <nav className="template-list">
           <div className="template-section-label">{UI_STRINGS[uiLang].templates}</div>
-          {templates.map((t) => (
-            <div
-              key={t.id}
-              id={`template-${t.id}`}
-              className={`template-item ${selectedTemplate?.id === t.id ? 'active' : ''}`}
-              onClick={() => setSelectedTemplate(t)}
-            >
-              <div className="template-name">{t.name[uiLang]}</div>
-              <div className="template-desc">{t.description[uiLang]}</div>
-            </div>
-          ))}
+          
+          {[
+            { id: 'employment', label: UI_STRINGS[uiLang].catEmployment },
+            { id: 'notice', label: UI_STRINGS[uiLang].catNotice },
+            { id: 'termination', label: UI_STRINGS[uiLang].catTermination },
+          ].map((cat) => {
+            const isExpanded = expandedCats.includes(cat.id);
+            const catTemplates = templates.filter(t => t.category === cat.id);
+            
+            if (catTemplates.length === 0) return null;
+
+            return (
+              <div key={cat.id} className={`category-group ${isExpanded ? 'expanded' : ''}`}>
+                <div 
+                  className="category-header" 
+                  onClick={() => setExpandedCats(prev => 
+                    isExpanded ? prev.filter(c => c !== cat.id) : [...prev, cat.id]
+                  )}
+                >
+                  <ChevronDown size={14} className="cat-chevron" />
+                  <span>{cat.label}</span>
+                </div>
+                <div className="category-content">
+                  {catTemplates.map((t) => (
+                    <div
+                      key={t.id}
+                      className={`template-item ${selectedTemplate?.id === t.id ? 'active' : ''}`}
+                      onClick={() => setSelectedTemplate(t)}
+                    >
+                      <div className="template-name">{t.name[uiLang]}</div>
+                      <div className="template-desc">{t.description[uiLang]}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-footer">
@@ -238,34 +323,73 @@ function App() {
             </button>
           </div>
 
-          <div className="lang-toggle">
-            {[
-              ['zh', UI_STRINGS[uiLang].langZh], 
-              ['en', UI_STRINGS[uiLang].langEn], 
-              ['dual', UI_STRINGS[uiLang].langDual]
-            ].map(([key, label]) => (
-              <button
-                key={key}
-                id={`lang-${key}`}
-                className={`lang-btn ${lang === key ? 'active' : ''}`}
-                onClick={() => setLang(key)}
-              >{label}</button>
-            ))}
+          <div className="lang-section">
+            <div className="section-label">{UI_STRINGS[uiLang].letterLangLabel}</div>
+            <div className="lang-toggle">
+              {[
+                ['zh', UI_STRINGS[uiLang].langZh], 
+                ['en', UI_STRINGS[uiLang].langEn], 
+                ['dual', UI_STRINGS[uiLang].langDual]
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  id={`lang-${key}`}
+                  className={`lang-btn ${lang === key ? 'active' : ''}`}
+                  onClick={() => setLang(key)}
+                >{label}</button>
+              ))}
+            </div>
           </div>
 
           <div className="fields-container">
             {selectedTemplate?.fields.map((field) => (
               <div key={field.id} className="form-group">
-                <label htmlFor={`field-${field.id}`}>
+                <label htmlFor={'field-' + field.id}>
                   {field.label[uiLang]}
                 </label>
-                <input
-                  id={`field-${field.id}`}
-                  type={field.type || 'text'}
-                  placeholder={field.placeholder || ''}
-                  value={formData[field.id] ?? ''}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                />
+                {UNIT_FIELDS.includes(field.id) ? (
+                  <div className="unit-input-group">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={formData[field.id + '_num'] ?? ''}
+                      onChange={(e) => handleChange(field.id + '_num', e.target.value)}
+                    />
+                    <select
+                      value={formData[field.id + '_unit'] ?? 'day'}
+                      onChange={(e) => handleChange(field.id + '_unit', e.target.value)}
+                    >
+                      <option value="day">{uiLang === 'zh' ? '天' : 'Day(s)'}</option>
+                      <option value="month">{uiLang === 'zh' ? '个月' : 'Month(s)'}</option>
+                    </select>
+                  </div>
+                ) : (
+                  <input
+                    id={'field-' + field.id}
+                    type={field.type || 'text'}
+                    placeholder={field.placeholder || ''}
+                    value={CURRENCY_FIELDS.includes(field.id) ? formatForInput(formData[field.id]) : (formData[field.id] ?? '')}
+                    onChange={(e) => {
+                      let val = e.target.value;
+                      if (CURRENCY_FIELDS.includes(field.id)) {
+                        // Only allow numbers and one decimal point
+                        val = val.replace(/[^0-9.]/g, '');
+                        // Prevent multiple decimal points
+                        const parts = val.split('.');
+                        if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      handleChange(field.id, val);
+                    }}
+                    onBlur={(e) => {
+                      if (CURRENCY_FIELDS.includes(field.id) && formData[field.id]) {
+                        const num = parseFloat(formData[field.id]);
+                        if (!isNaN(num)) {
+                          handleChange(field.id, num.toFixed(2));
+                        }
+                      }
+                    }}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -324,20 +448,20 @@ function App() {
                   <div
                     style={{ marginBottom: 40 }}
                     dangerouslySetInnerHTML={{
-                      __html: renderTemplate(selectedTemplate?.content?.en || '', formData),
+                      __html: renderTemplate(selectedTemplate?.content?.en || '', formData, 'en'),
                     }}
                   />
                   <div
                     style={{ borderTop: '1px dashed #ddd', paddingTop: 40 }}
                     dangerouslySetInnerHTML={{
-                      __html: renderTemplate(selectedTemplate?.content?.zh || '', formData),
+                      __html: renderTemplate(selectedTemplate?.content?.zh || '', formData, 'zh'),
                     }}
                   />
                 </>
               ) : (
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: renderTemplate(selectedTemplate?.content?.[lang] || '', formData),
+                    __html: renderTemplate(selectedTemplate?.content?.[lang] || '', formData, lang),
                   }}
                 />
               )}
