@@ -21,6 +21,10 @@ const UI_STRINGS = {
     catEmployment: "雇主信类",
     catNotice: "通知与申请类",
     catTermination: "离职与解雇类",
+    collapse: "折叠",
+    expand: "展开",
+    expandEditor: "展开内容编辑",
+    expandTemplates: "展开模板",
   },
   en: {
     templates: "Templates",
@@ -38,6 +42,10 @@ const UI_STRINGS = {
     catEmployment: "Employment Letters",
     catNotice: "Notices & Requests",
     catTermination: "Separation & Termination",
+    collapse: "Collapse",
+    expand: "Expand",
+    expandEditor: "Expand Editor",
+    expandTemplates: "Expand Templates",
   }
 };
 
@@ -299,29 +307,29 @@ function App() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="main-content">
-        {sidebarCollapsed && (
-          <div
-            className="expand-handle sidebar-handle"
-            onClick={() => setSidebarCollapsed(false)}
-            title="Expand Sidebar / 展开侧边栏"
-          >
-            <ChevronRight size={16} />
-          </div>
-        )}
-
-        {/* Editor */}
-        <section className={`editor-pane ${editorCollapsed ? 'collapsed' : ''}`}>
-          <div className="editor-header">
-            <h2>{UI_STRINGS[uiLang].editor}</h2>
-            <button
-              className="toggle-editor-btn"
-              onClick={() => setEditorCollapsed(true)}
-              title={uiLang === 'zh' ? "收起编辑" : "Collapse Editor"}
+        <main className="main-content">
+          {sidebarCollapsed && (
+            <div
+              className="expand-handle sidebar-handle"
+              onClick={() => setSidebarCollapsed(false)}
             >
-              <ChevronLeft size={20} />
-            </button>
-          </div>
+              <ChevronRight size={16} />
+              <span className="vertical-text">{UI_STRINGS[uiLang].expandTemplates}</span>
+            </div>
+          )}
+
+          {/* Editor */}
+          <section className={`editor-pane ${editorCollapsed ? 'collapsed' : ''}`}>
+            <div className="editor-header">
+              <h2>{UI_STRINGS[uiLang].editor}</h2>
+              <button
+                className="toggle-editor-btn-styled"
+                onClick={() => setEditorCollapsed(true)}
+              >
+                <ChevronLeft size={16} />
+                <span>{UI_STRINGS[uiLang].collapse}</span>
+              </button>
+            </div>
 
           <div className="lang-section">
             <div className="section-label">{UI_STRINGS[uiLang].letterLangLabel}</div>
@@ -407,18 +415,19 @@ function App() {
           </div>
         </section>
 
+        {editorCollapsed && (
+          <div
+            className="expand-handle"
+            onClick={() => setEditorCollapsed(false)}
+          >
+            <ChevronRight size={16} />
+            <span className="vertical-text">{UI_STRINGS[uiLang].expandEditor}</span>
+          </div>
+        )}
+
         {/* Preview */}
         <section className="preview-pane">
-          {editorCollapsed && (
-            <div
-              className="expand-handle"
-              onClick={() => setEditorCollapsed(false)}
-              title={uiLang === 'zh' ? "展开编辑" : "Expand Editor"}
-            >
-              <ChevronRight size={16} />
-            </div>
-          )}
-          <div className="controls">
+            <div className="controls">
             <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
               <Printer size={16} /> {UI_STRINGS[uiLang].printBtn}
             </button>

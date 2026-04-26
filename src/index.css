@@ -129,6 +129,30 @@ body, html {
   color: var(--primary);
 }
 
+.toggle-sidebar-btn-styled,
+.toggle-editor-btn-styled {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.toggle-sidebar-btn-styled:hover,
+.toggle-editor-btn-styled:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+}
+
 .logo-icon {
   width: 40px;
   height: 40px;
@@ -321,22 +345,8 @@ body, html {
   margin: 0;
 }
 
-.toggle-editor-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.toggle-editor-btn:hover {
-  background: #f1f5f9;
-  color: var(--primary);
+.toggle-editor-btn-styled {
+  /* Inherits most styles from above */
 }
 
 .lang-section {
@@ -490,36 +500,42 @@ body, html {
 }
 
 .expand-handle {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 60px;
-  background: var(--primary);
-  color: white;
+  width: 32px;
+  height: 100%;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0 8px 8px 0;
+  gap: 12px;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
-  z-index: 20;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.sidebar-handle {
-  top: 35%;
-  background: var(--primary-light);
+  flex-shrink: 0; /* Take up physical space */
+  z-index: 100;
+  transition: background 0.2s;
 }
 
 .expand-handle:hover {
-  background: var(--primary);
-  transform: translateY(-50%) scaleX(1.1);
+  background: #f1f5f9;
 }
 
-.sidebar-handle:hover {
-  background: var(--primary-light);
+.expand-handle:hover .vertical-text {
+  color: var(--primary);
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.sidebar-handle {
+  box-shadow: 2px 0 10px rgba(0,0,0,0.03);
 }
 
 .controls {
