@@ -2,6 +2,36 @@ import React, { useState, useEffect, useRef } from 'react';
 import { templates } from './templates';
 import { Fish, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import pkg from '../package.json';
+import { Languages } from 'lucide-react';
+
+const UI_STRINGS = {
+  zh: {
+    templates: "Templates / 模板",
+    editor: "Editor / 编辑",
+    langZh: "仅中文",
+    langEn: "仅英文",
+    langDual: "中英对照",
+    exportBtn: "Export PDF / 导出 PDF",
+    exporting: "导出中…",
+    printBtn: "Print / 打印",
+    version: "Version / 版本",
+    updated: "Last Updated / 更新日期",
+    uiLangLabel: "界面语言 / Language",
+  },
+  en: {
+    templates: "Templates",
+    editor: "Editor",
+    langZh: "Chinese Only",
+    langEn: "English Only",
+    langDual: "Bilingual",
+    exportBtn: "Export PDF",
+    exporting: "Exporting...",
+    printBtn: "Print",
+    version: "Version",
+    updated: "Last Updated",
+    uiLangLabel: "界面语言 / Language",
+  }
+};
 
 // ── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -72,6 +102,7 @@ function App() {
   const [exporting, setExporting] = useState(false);
   const [editorCollapsed, setEditorCollapsed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [uiLang, setUiLang] = useState('zh');
   const letterRef = useRef();
 
   // Reset form fields when template changes, but keep values for shared field IDs
@@ -133,14 +164,32 @@ function App() {
           <button
             className="toggle-sidebar-btn"
             onClick={() => setSidebarCollapsed(true)}
-            title="Collapse Sidebar / 收起侧边栏"
+            title={uiLang === 'zh' ? "收起侧边栏" : "Collapse Sidebar"}
           >
             <ChevronLeft size={20} />
           </button>
         </div>
 
+        {/* UI Language Switcher */}
+        <div className="ui-lang-switcher">
+          <div className="switcher-label">
+            <Languages size={14} />
+            <span>{UI_STRINGS[uiLang].uiLangLabel}</span>
+          </div>
+          <div className="switcher-buttons">
+            <button 
+              className={uiLang === 'zh' ? 'active' : ''} 
+              onClick={() => setUiLang('zh')}
+            >中文</button>
+            <button 
+              className={uiLang === 'en' ? 'active' : ''} 
+              onClick={() => setUiLang('en')}
+            >EN</button>
+          </div>
+        </div>
+
         <nav className="template-list">
-          <div className="template-section-label">Templates / 模板</div>
+          <div className="template-section-label">{UI_STRINGS[uiLang].templates}</div>
           {templates.map((t) => (
             <div
               key={t.id}
@@ -148,18 +197,18 @@ function App() {
               className={`template-item ${selectedTemplate?.id === t.id ? 'active' : ''}`}
               onClick={() => setSelectedTemplate(t)}
             >
-              <div className="template-name">{t.name[sl]}</div>
-              <div className="template-desc">{t.description[sl]}</div>
+              <div className="template-name">{t.name[uiLang]}</div>
+              <div className="template-desc">{t.description[uiLang]}</div>
             </div>
           ))}
         </nav>
 
         <div className="sidebar-footer">
           <div className="version-info">
-            Version / 版本: v{pkg.version}
+            {UI_STRINGS[uiLang].version}: v{pkg.version}
           </div>
           <div className="version-info" style={{ marginTop: '4px' }}>
-            Last Updated / 更新日期: 2026-04-25
+            {UI_STRINGS[uiLang].updated}: 2026-04-25
           </div>
         </div>
       </aside>
@@ -179,18 +228,22 @@ function App() {
         {/* Editor */}
         <section className={`editor-pane ${editorCollapsed ? 'collapsed' : ''}`}>
           <div className="editor-header">
-            <h2>Editor / 编辑</h2>
+            <h2>{UI_STRINGS[uiLang].editor}</h2>
             <button
               className="toggle-editor-btn"
               onClick={() => setEditorCollapsed(true)}
-              title="Collapse Editor / 收起编辑"
+              title={uiLang === 'zh' ? "收起编辑" : "Collapse Editor"}
             >
               <ChevronLeft size={20} />
             </button>
           </div>
 
           <div className="lang-toggle">
-            {[['zh', '中文'], ['en', 'English'], ['dual', '中英对照']].map(([key, label]) => (
+            {[
+              ['zh', UI_STRINGS[uiLang].langZh], 
+              ['en', UI_STRINGS[uiLang].langEn], 
+              ['dual', UI_STRINGS[uiLang].langDual]
+            ].map(([key, label]) => (
               <button
                 key={key}
                 id={`lang-${key}`}
@@ -204,7 +257,7 @@ function App() {
             {selectedTemplate?.fields.map((field) => (
               <div key={field.id} className="form-group">
                 <label htmlFor={`field-${field.id}`}>
-                  {lang === 'en' ? field.label.en : field.label.zh}
+                  {field.label[uiLang]}
                 </label>
                 <input
                   id={`field-${field.id}`}
@@ -225,7 +278,7 @@ function App() {
               disabled={exporting}
             >
               <Download size={16} />
-              {exporting ? '导出中…' : 'Export PDF / 导出 PDF'}
+              {exporting ? UI_STRINGS[uiLang].exporting : UI_STRINGS[uiLang].exportBtn}
             </button>
           </div>
         </section>
@@ -236,14 +289,14 @@ function App() {
             <div
               className="expand-handle"
               onClick={() => setEditorCollapsed(false)}
-              title="Expand Editor / 展开编辑"
+              title={uiLang === 'zh' ? "展开编辑" : "Expand Editor"}
             >
               <ChevronRight size={16} />
             </div>
           )}
           <div className="controls">
             <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
-              <Printer size={16} /> Print / 打印
+              <Printer size={16} /> {UI_STRINGS[uiLang].printBtn}
             </button>
           </div>
 

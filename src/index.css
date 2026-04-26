@@ -40,7 +40,7 @@ body, html {
   padding: 24px;
   z-index: 10;
   box-shadow: var(--shadow-md);
-  overflow-y: auto;
+  overflow: hidden; /* Remove global scroll */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -59,6 +59,56 @@ body, html {
   gap: 12px;
   margin-bottom: 36px;
   flex-shrink: 0;
+}
+
+/* ── UI Lang Switcher ── */
+.ui-lang-switcher {
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switcher-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.switcher-buttons {
+  display: flex;
+  background: #fff;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 2px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.switcher-buttons button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.switcher-buttons button.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
 }
 
 .toggle-sidebar-btn {
@@ -104,6 +154,10 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1; /* Take up available space */
+  overflow-y: auto; /* Enable scroll here */
+  margin-right: -12px; /* Adjust for scrollbar gap */
+  padding-right: 12px;
 }
 
 .template-section-label {
