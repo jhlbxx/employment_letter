@@ -71,9 +71,7 @@ function App() {
     const checkUpdate = async () => {
       try {
         // 生产环境更新链接：指向您的 GitHub 仓库
-        const UPDATE_URL = 'https://raw.githubusercontent.com/jhlbxx/employment_letter/refs/heads/feature/layout-upgrade/package.json';
-
-        const response = await fetch(UPDATE_URL);
+        const response = await fetch('https://raw.githubusercontent.com/jhlbxx/employment_letter/refs/heads/main/package.json');
         if (!response.ok) return;
         const data = await response.json();
 
