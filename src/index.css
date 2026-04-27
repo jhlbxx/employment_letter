@@ -314,7 +314,7 @@ body, html {
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #e2e8f0;
-  padding: 28px;
+  padding: 28px 28px 0 28px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -322,6 +322,21 @@ body, html {
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 5;
+}
+
+.editor-footer {
+  position: sticky;
+  bottom: 0;
+  left: -28px;
+  right: -28px;
+  margin: auto -28px 0 -28px;
+  padding: 20px 28px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid #e2e8f0;
+  z-index: 20;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .editor-resizer {
@@ -721,7 +736,7 @@ body, html {
 .batch-preview-table th {
   background: #f1f5f9;
   padding: 12px 10px;
-  text-align: left;
+  text-align: center;
   border-bottom: 2px solid #e2e8f0;
   border-right: 1px solid #e2e8f0;
   color: var(--text-main);
@@ -740,6 +755,7 @@ body, html {
 
 .batch-preview-table td {
   padding: 10px;
+  text-align: center;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
   color: var(--text-main);
@@ -747,6 +763,64 @@ body, html {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.batch-preview-table tr.active-row td {
+  background: #eff6ff;
+  border-bottom-color: #dbeafe;
+}
+
+.batch-preview-table tr:hover td {
+  background: #f8fafc;
+}
+
+.batch-preview-table tr.active-row:hover td {
+  background: #e0f2fe;
+}
+
+/* Batch Navigation in Preview Pane */
+.batch-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin-right: auto;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #fff;
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f8fafc;
+}
+
+.nav-info {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 80px;
+  text-align: center;
 }
 
 .batch-preview-table td:last-child {

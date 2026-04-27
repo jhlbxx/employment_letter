@@ -80,7 +80,7 @@ const UI_STRINGS = {
   }
 };
 
-const CURRENCY_FIELDS = ['salary', 'monthlyBase', 'annualBonus', 'statutoryComp', 'extraComp'];
+const CURRENCY_FIELDS = ['salary', 'monthlyBase', 'annualSalary', 'bonus', 'annualBonus', 'statutoryComp', 'extraComp'];
 const UNIT_FIELDS = ['noticePeriod'];
 
 const UNIT_TRANSLATIONS = {
@@ -90,11 +90,18 @@ const UNIT_TRANSLATIONS = {
 
 /** Formats a number string with commas and 2 decimal places for the final letter */
 function formatToCurrency(val) {
-  if (!val) return val;
-  const num = parseFloat(val.toString().replace(/,/g, ''));
+  if (val === undefined || val === null || val === '') return '';
+  // Strip everything except numbers, dots, and minus signs (handles $, ¥, commas, etc.)
+  const cleanVal = val.toString().replace(/[^-0-9.]/g, '');
+  const num = parseFloat(cleanVal);
   if (isNaN(num)) return val;
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+/** Removes illegal characters from filenames */
+const sanitizeFilename = (name) => {
+  return name.replace(/[\\/:*?"<>|]/g, '_').trim();
+};
 
 /** Formats a number string with commas only for display in the input field */
 function formatForInput(val) {
@@ -126,19 +133,19 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /** For sidebar display: 'dual' maps to 'zh', otherwise use the lang itself */
 const sidebarLang = (lang) => (lang === 'dual' ? 'zh' : lang);
 
 /** Replace {{key}} vars and {{#key}}...{{/key}} conditional blocks, then clean up leftovers */
-function renderTemplate(contentTemplate, formData, lang) {
+function renderTemplate(contentTemplate, formData = {}, lang) {
   if (!contentTemplate) return '';
+  const data = formData || {};
   let out = contentTemplate;
 
   // 1. Replace conditional blocks
-  Object.keys(formData).forEach((key) => {
+  Object.keys(data).forEach((key) => {
     const regex = new RegExp(`{{#${key}}}([\\s\\S]*?){{\\/${key}}}`, 'g');
     if (formData[key]) {
       out = out.replace(regex, '$1');
@@ -148,20 +155,20 @@ function renderTemplate(contentTemplate, formData, lang) {
   });
 
   // 2. Replace simple variables
-  Object.keys(formData).forEach((key) => {
-    let val = formData[key]
-      ? formData[key]
+  Object.keys(data).forEach((key) => {
+    let val = data[key]
+      ? data[key]
       : '<span style="color:#aaa">[ ' + key + ' ]</span>';
     
     // Apply currency formatting if applicable
-    if (formData[key] && CURRENCY_FIELDS.includes(key)) {
+    if (data[key] && CURRENCY_FIELDS.includes(key)) {
       val = formatToCurrency(val);
     }
     
     // Apply unit translation for specific fields (e.g. Notice Period)
     if (UNIT_FIELDS.includes(key)) {
-      const num = formData[key + '_num'] || '';
-      const unitKey = formData[key + '_unit'] || 'day';
+      const num = data[key + '_num'] || '';
+      const unitKey = data[key + '_unit'] || 'day';
       if (num) {
         // Get target language for translation (lang here is the 'inner' lang during dual rendering)
         const targetLang = lang === 'dual' ? 'en' : lang; // This is slightly tricky, see below
@@ -205,6 +212,7 @@ function App() {
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [currentBatchItem, setCurrentBatchItem] = useState(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const letterRef = useRef();
   const batchWorkerRef = useRef();
@@ -268,6 +276,20 @@ function App() {
     
     // Create worksheet with headers
     const ws = XLSX.utils.aoa_to_sheet([headers]);
+    
+    // Dynamic formatting based on field types
+    const colFormats = selectedTemplate.fields.map(f => {
+      if (CURRENCY_FIELDS.includes(f.id)) {
+        return { z: '#,##0.00' }; // Currency with 2 decimals and comma
+      }
+      if (f.type === 'date' || f.id.toLowerCase().includes('date')) {
+        return { z: 'yyyy-mm-dd' }; // Date format
+      }
+      return { z: '@' }; // Default to Text to prevent scientific notation
+    });
+
+    ws['!cols'] = colFormats;
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Template");
     
@@ -282,7 +304,8 @@ function App() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const bstr = evt.target.result;
-      const wb = XLSX.read(bstr, { type: 'binary' });
+      // cellDates: true converts Excel dates to JS Date objects
+      const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws);
@@ -297,12 +320,20 @@ function App() {
         const newRow = {};
         Object.keys(row).forEach(label => {
           const id = labelToId[label];
-          if (id) newRow[id] = row[label];
+          if (id) {
+            let val = row[label];
+            // If it's a Date object from Excel, format it to YYYY-MM-DD
+            if (val instanceof Date) {
+              val = val.toISOString().split('T')[0];
+            }
+            newRow[id] = val;
+          }
         });
         return newRow;
       });
 
       setBatchData(mappedData);
+      setPreviewIndex(0); // Reset preview to first record
     };
     reader.readAsBinaryString(file);
   };
@@ -336,9 +367,18 @@ function App() {
         
         const blob = await html2pdf().from(element).set(opt).output('blob');
         
-        // 4. Name the file intelligently
-        const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name')) || Object.keys(row)[0];
-        const fileName = `${row[nameKey] || 'Record'}_${i + 1}.pdf`;
+        // --- Intelligent Naming ---
+        const nameKey = Object.keys(row).find(k => 
+          k.toLowerCase().includes('name') || k.includes('姓名')
+        ) || Object.keys(row)[0];
+        
+        const employeeName = row[nameKey] || (uiLang === 'zh' ? '员工' : 'Employee');
+        const companyName = "Daves Fish and Chips";
+        const templateName = selectedTemplate.name[uiLang];
+        
+        const rawFileName = `${employeeName} - ${companyName} - ${templateName}.pdf`;
+        const fileName = sanitizeFilename(rawFileName);
+        
         zip.file(fileName, blob);
       }
 
@@ -557,17 +597,6 @@ function App() {
                         <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>{UI_STRINGS[uiLang].batchNote}</p>
                       </div>
                     </div>
-                    <button 
-                      className="btn btn-primary" 
-                      onClick={runBatchGeneration}
-                      disabled={isProcessingBatch}
-                    >
-                      {isProcessingBatch ? (
-                        <><Loader2 className="animate-spin" size={16} /> {UI_STRINGS[uiLang].batchProgress.replace('{current}', batchProgress.current).replace('{total}', batchProgress.total)}</>
-                      ) : (
-                        <><FileText size={16} /> {UI_STRINGS[uiLang].startBatch}</>
-                      )}
-                    </button>
                   </div>
                 )}
 
@@ -580,8 +609,18 @@ function App() {
                     </thead>
                     <tbody>
                       {batchData.length > 0 ? batchData.slice(0, 10).map((row, idx) => (
-                        <tr key={idx}>
-                          {selectedTemplate.fields.map(f => <td key={f.id}>{row[f.id] || '-'}</td>)}
+                        <tr 
+                          key={idx} 
+                          onClick={() => setPreviewIndex(idx)}
+                          className={previewIndex === idx ? 'active-row' : ''}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {selectedTemplate.fields.map(f => {
+                            const val = row[f.id];
+                            const isCurrency = CURRENCY_FIELDS.includes(f.id);
+                            const displayVal = isCurrency && val ? formatToCurrency(val) : (val || '-');
+                            return <td key={f.id} title={displayVal.toString()}>{displayVal}</td>;
+                          })}
                         </tr>
                       )) : (
                         <tr>
@@ -657,16 +696,43 @@ function App() {
               </div>
             )}
 
-          <div className="export-area">
-            <button
-              id="btn-export-pdf"
-              className="btn btn-primary"
-              onClick={exportPDF}
-              disabled={exporting}
-            >
-              <Download size={16} />
-              {exporting ? UI_STRINGS[uiLang].exporting : UI_STRINGS[uiLang].exportBtn}
-            </button>
+          {/* Editor Footer (Sticky) */}
+          <div className="editor-footer">
+            {!batchMode ? (
+              <button
+                id="btn-export-pdf"
+                className="btn btn-primary"
+                onClick={exportPDF}
+                disabled={exporting}
+                style={{ width: '100%' }}
+              >
+                <Download size={16} />
+                {exporting ? (UI_STRINGS[uiLang]?.exporting || '...') : (UI_STRINGS[uiLang]?.exportBtn || 'Export')}
+              </button>
+            ) : (
+              (batchData && batchData.length > 0) && (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={runBatchGeneration}
+                  disabled={isProcessingBatch}
+                  style={{ width: '100%' }}
+                >
+                  {isProcessingBatch ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} /> 
+                      {uiLang === 'zh' 
+                        ? `正在生成第 ${batchProgress.current}/${batchProgress.total} 份...`
+                        : `Generating ${batchProgress.current}/${batchProgress.total}...`}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={16} /> 
+                      {(UI_STRINGS[uiLang]?.startBatch || 'Start Batch')}
+                    </>
+                  )}
+                </button>
+              )
+            )}
           </div>
           </section>
 
@@ -687,6 +753,27 @@ function App() {
         {/* Preview */}
         <section className="preview-pane">
             <div className="controls">
+            {batchMode && batchData.length > 0 && (
+              <div className="batch-nav">
+                <button 
+                  className="nav-btn" 
+                  disabled={previewIndex === 0}
+                  onClick={() => setPreviewIndex(p => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="nav-info">
+                  {uiLang === 'zh' ? `第 ${previewIndex + 1} / ${batchData.length} 份` : `Letter ${previewIndex + 1} of ${batchData.length}`}
+                </span>
+                <button 
+                  className="nav-btn" 
+                  disabled={previewIndex === batchData.length - 1}
+                  onClick={() => setPreviewIndex(p => Math.min(batchData.length - 1, p + 1))}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
             <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
               <Printer size={16} /> {UI_STRINGS[uiLang].printBtn}
             </button>
@@ -716,20 +803,20 @@ function App() {
                   <div
                     style={{ marginBottom: 40 }}
                     dangerouslySetInnerHTML={{
-                      __html: renderTemplate(selectedTemplate?.content?.en || '', formData, 'en'),
+                      __html: renderTemplate(selectedTemplate?.content?.en || '', (batchMode && batchData.length > 0) ? batchData[previewIndex] : formData, 'en'),
                     }}
                   />
                   <div
                     style={{ borderTop: '1px dashed #ddd', paddingTop: 40 }}
                     dangerouslySetInnerHTML={{
-                      __html: renderTemplate(selectedTemplate?.content?.zh || '', formData, 'zh'),
+                      __html: renderTemplate(selectedTemplate?.content?.zh || '', (batchMode && batchData.length > 0) ? batchData[previewIndex] : formData, 'zh'),
                     }}
                   />
                 </>
               ) : (
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: renderTemplate(selectedTemplate?.content?.[lang] || '', formData, lang),
+                    __html: renderTemplate(selectedTemplate?.content?.[lang] || '', (batchMode && batchData.length > 0) ? batchData[previewIndex] : formData, lang),
                   }}
                 />
               )}
