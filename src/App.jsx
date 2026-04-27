@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { templates } from './templates';
 import { Fish, Download, Printer, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import pkg from '../package.json';
-import { Languages, Table, Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Languages, Table, Upload, FileText, CheckCircle2, AlertCircle, Loader2, Trash2, Edit2, X, Plus } from 'lucide-react';
 import Papa from 'papaparse';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -41,7 +41,11 @@ const UI_STRINGS = {
     batchComplete: "批量生成完成！",
     batchError: "表格格式有误，请检查标题行",
     batchNote: "请确保表格列名与输入框标签完全一致",
-    batchEmpty: "暂无数据，请先下载模版并填写上传",
+    addRecord: "手动新增",
+    batchEmpty: "暂无数据",
+    addRecordHint: "如需手动添加数据，请点击",
+    downloadTemplate: "下载 Excel 模板",
+    uploadData: "上传数据表格",
     previewOnly: "仅显示前 10 条预览",
   },
   en: {
@@ -68,6 +72,8 @@ const UI_STRINGS = {
     batchMode: "Batch Mode",
     singleMode: "Single Mode",
     downloadTemplate: "Download Excel Template",
+    uploadData: "Upload Excel Data",
+    addRecord: "Add Record",
     uploadCsv: "Upload Data (.xlsx)",
     batchSummary: "Recognized {count} records",
     startBatch: "Start Batch Generation (ZIP)",
@@ -75,7 +81,8 @@ const UI_STRINGS = {
     batchComplete: "Batch Complete!",
     batchError: "File format error, please check headers",
     batchNote: "Ensure Excel column names match input labels exactly",
-    batchEmpty: "No data found. Please download the template, fill it out, and upload.",
+    batchEmpty: "No data found",
+    addRecordHint: "To add data manually, please click",
     previewOnly: "Showing first 10 records only",
   }
 };
@@ -87,6 +94,8 @@ const UNIT_TRANSLATIONS = {
   zh: { day: '天', month: '个月' },
   en: { day: 'day(s)', month: 'month(s)' }
 };
+
+const REQUIRED_FIELDS = ['employeeName', 'role', 'startDate'];
 
 /** Formats a number string with commas and 2 decimal places for the final letter */
 function formatToCurrency(val) {
@@ -139,57 +148,62 @@ class ErrorBoundary extends React.Component {
 const sidebarLang = (lang) => (lang === 'dual' ? 'zh' : lang);
 
 /** Replace {{key}} vars and {{#key}}...{{/key}} conditional blocks, then clean up leftovers */
-function renderTemplate(contentTemplate, formData = {}, lang) {
-  if (!contentTemplate) return '';
-  const data = formData || {};
-  let out = contentTemplate;
+function renderTemplate(content, data = {}, lang) {
+  if (!content) return '';
+  let out = content;
 
-  // 1. Replace conditional blocks
-  Object.keys(data).forEach((key) => {
-    const regex = new RegExp(`{{#${key}}}([\\s\\S]*?){{\\/${key}}}`, 'g');
-    if (formData[key]) {
-      out = out.replace(regex, '$1');
+  // 1. Find all keys used in the template
+  const sectionMatches = content.match(/{{#(\w+)}}/g) || [];
+  const varMatches = content.match(/{{(\w+)}}/g) || [];
+  const allKeys = [...new Set([
+    ...sectionMatches.map(m => m.replace(/{{#|}}/g, '')),
+    ...varMatches.map(m => m.replace(/{{|}}/g, ''))
+  ])];
+
+  allKeys.forEach((key) => {
+    let val = '';
+    const valZh = data[key + '_zh'];
+    const valEn = data[key + '_en'];
+
+    // Smart retrieval based on letter language
+    if (valZh || valEn) {
+      if (lang === 'zh') val = valZh || data[key] || '';
+      else if (lang === 'en') val = valEn || data[key] || '';
+      else val = valEn && valZh ? `${valEn} (${valZh})` : (valEn || valZh || data[key] || '');
     } else {
-      out = out.replace(regex, '');
+      val = data[key] || '';
     }
-  });
 
-  // 2. Replace simple variables
-  Object.keys(data).forEach((key) => {
-    let val = data[key]
-      ? data[key]
-      : '<span style="color:#aaa">[ ' + key + ' ]</span>';
-    
-    // Apply currency formatting if applicable
-    if (data[key] && CURRENCY_FIELDS.includes(key)) {
+    // Formatting: Currency
+    if (val && CURRENCY_FIELDS.includes(key)) {
       val = formatToCurrency(val);
     }
-    
-    // Apply unit translation for specific fields (e.g. Notice Period)
+
+    // Formatting: Units (Notice Period)
     if (UNIT_FIELDS.includes(key)) {
       const num = data[key + '_num'] || '';
       const unitKey = data[key + '_unit'] || 'day';
       if (num) {
-        // Get target language for translation (lang here is the 'inner' lang during dual rendering)
-        const targetLang = lang === 'dual' ? 'en' : lang; // This is slightly tricky, see below
-        // Actually, the 'lang' variable in scope here is the one passed to renderTemplate(..., lang)
         const unitLabel = UNIT_TRANSLATIONS[lang] ? UNIT_TRANSLATIONS[lang][unitKey] : UNIT_TRANSLATIONS['en'][unitKey];
         val = num + ' ' + unitLabel;
-      } else {
-        val = '<span style="color:#aaa">[ ' + key + ' ]</span>';
       }
     }
-    
-    out = out.split('{{' + key + '}}').join(val);
+
+    // Process section {{#key}}
+    const sectionRegex = new RegExp(`{{#${key}}}([\\s\\S]*?){{/${key}}}`, 'g');
+    if (val) {
+      out = out.replace(sectionRegex, '$1');
+    } else {
+      out = out.replace(sectionRegex, '');
+    }
+
+    // Process placeholder {{key}}
+    const placeholder = val !== '' ? val : `<span style="color:#aaa">[ ${key} ]</span>`;
+    out = out.split('{{' + key + '}}').join(placeholder);
   });
 
-  // 3. Clean up any leftover unreplaced placeholders
-  out = out.replace(/{{#\w+}}[\s\S]*?{{\/\w+}}/g, '');
-  out = out.replace(/{{\w+}}/g, '');
-
-  // 4. Convert **bold**
+  // Convert **bold** to <b>
   out = out.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
   return out;
 }
 
@@ -203,7 +217,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uiLang, setUiLang] = useState('zh');
   const [expandedCats, setExpandedCats] = useState([]);
-  const [editorWidth, setEditorWidth] = useState(360);
+  const [editorWidth, setEditorWidth] = useState(550);
   const [isResizing, setIsResizing] = useState(false);
   
   // Batch Mode States
@@ -213,6 +227,13 @@ function App() {
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [currentBatchItem, setCurrentBatchItem] = useState(null);
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const BATCH_PAGE_SIZE = 5;
+  
+  // Edit Modal States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingRecordIdx, setEditingRecordIdx] = useState(null);
+  const [editingData, setEditingData] = useState({});
 
   const letterRef = useRef();
   const batchWorkerRef = useRef();
@@ -271,21 +292,29 @@ function App() {
   // --- Batch Mode Helpers ---
   
   const downloadExcelTemplate = () => {
-    if (!selectedTemplate) return;
-    const headers = selectedTemplate.fields.map(f => f.label[uiLang]);
-    
-    // Create worksheet with headers
+    // Use dynamic labels for columns
+    const headers = [];
+    selectedTemplate.fields.forEach(f => {
+      if (f.bilingual) {
+        headers.push(`${f.label[uiLang]} (ZH)`);
+        headers.push(`${f.label[uiLang]} (EN)`);
+      } else {
+        headers.push(f.label[uiLang]);
+      }
+    });
+
     const ws = XLSX.utils.aoa_to_sheet([headers]);
     
-    // Dynamic formatting based on field types
-    const colFormats = selectedTemplate.fields.map(f => {
-      if (CURRENCY_FIELDS.includes(f.id)) {
-        return { z: '#,##0.00' }; // Currency with 2 decimals and comma
+    // Dynamic formatting based on columns
+    const colFormats = [];
+    selectedTemplate.fields.forEach(f => {
+      const fmt = CURRENCY_FIELDS.includes(f.id) ? { z: '#,##0.00' } : (f.type === 'date' ? { z: 'yyyy-mm-dd' } : { z: '@' });
+      if (f.bilingual) {
+        colFormats.push({ ...fmt, wpx: 120 });
+        colFormats.push({ ...fmt, wpx: 120 });
+      } else {
+        colFormats.push({ ...fmt, wpx: 120 });
       }
-      if (f.type === 'date' || f.id.toLowerCase().includes('date')) {
-        return { z: 'yyyy-mm-dd' }; // Date format
-      }
-      return { z: '@' }; // Default to Text to prevent scientific notation
     });
 
     ws['!cols'] = colFormats;
@@ -304,32 +333,35 @@ function App() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const bstr = evt.target.result;
-      // cellDates: true converts Excel dates to JS Date objects
       const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
       const wsname = wb.SheetNames[0];
       const ws = wb.Sheets[wsname];
       const data = XLSX.utils.sheet_to_json(ws);
 
-      // Map labels back to IDs
-      const labelToId = {};
-      selectedTemplate.fields.forEach(f => {
-        labelToId[f.label[uiLang]] = f.id;
-      });
-
       const mappedData = data.map(row => {
-        const newRow = {};
-        Object.keys(row).forEach(label => {
-          const id = labelToId[label];
-          if (id) {
-            let val = row[label];
-            // If it's a Date object from Excel, format it to YYYY-MM-DD
-            if (val instanceof Date) {
-              val = val.toISOString().split('T')[0];
-            }
-            newRow[id] = val;
+        const rowData = {};
+        
+        // Helper to safely handle Excel values (especially Dates)
+        const formatExcelVal = (val) => {
+          if (val instanceof Date) {
+            return val.toISOString().split('T')[0];
+          }
+          return val === undefined || val === null ? '' : val;
+        };
+
+        selectedTemplate.fields.forEach(f => {
+          if (f.bilingual) {
+            const labelZh = `${f.label[uiLang]} (ZH)`;
+            const labelEn = `${f.label[uiLang]} (EN)`;
+            rowData[f.id + '_zh'] = formatExcelVal(row[labelZh] || row[f.label[uiLang]]);
+            rowData[f.id + '_en'] = formatExcelVal(row[labelEn] || row[f.label[uiLang]]);
+            // Also keep base field for compatibility
+            rowData[f.id] = rowData[f.id + '_zh'] || rowData[f.id + '_en'] || '';
+          } else {
+            rowData[f.id] = formatExcelVal(row[f.label[uiLang]]);
           }
         });
-        return newRow;
+        return rowData;
       });
 
       setBatchData(mappedData);
@@ -392,6 +424,60 @@ function App() {
       setBatchProgress({ current: 0, total: 0 });
       setCurrentBatchItem(null);
     }
+  };
+  
+  const removeBatchRecord = (idx) => {
+    const newData = batchData.filter((_, i) => i !== idx);
+    setBatchData(newData);
+    // Adjust preview index if needed
+    if (previewIndex >= newData.length && newData.length > 0) {
+      setPreviewIndex(newData.length - 1);
+    }
+  };
+
+  const openEditModal = (idx) => {
+    setEditingRecordIdx(idx);
+    setEditingData({ ...batchData[idx] });
+    setIsEditModalOpen(true);
+  };
+
+  const saveEdit = () => {
+    // Validation
+    const missingFields = selectedTemplate.fields
+      .filter(f => REQUIRED_FIELDS.includes(f.id) && !editingData[f.id])
+      .map(f => f.label[uiLang]);
+
+    if (missingFields.length > 0) {
+      const msg = uiLang === 'zh' 
+        ? `请填写以下必填项：\n${missingFields.join('\n')}`
+        : `Please fill in the following required fields:\n${missingFields.join('\n')}`;
+      alert(msg);
+      return;
+    }
+
+    if (editingRecordIdx === 'new') {
+      // Append new record to the list
+      const newData = [...batchData, editingData];
+      setBatchData(newData);
+      setPreviewIndex(newData.length - 1);
+    } else {
+      // Update existing record
+      const newData = [...batchData];
+      newData[editingRecordIdx] = editingData;
+      setBatchData(newData);
+    }
+    setIsEditModalOpen(false);
+  };
+
+  const addNewBatchRecord = () => {
+    const newRow = {};
+    selectedTemplate.fields.forEach(f => {
+      newRow[f.id] = '';
+    });
+    // Set index to 'new' to indicate this record isn't in the list yet
+    setEditingRecordIdx('new');
+    setEditingData(newRow);
+    setIsEditModalOpen(true);
   };
 
   const exportPDF = async () => {
@@ -579,24 +665,28 @@ function App() {
             {batchMode ? (
               <div className="batch-editor">
                 <div className="batch-actions">
+                  <button className="btn btn-secondary" onClick={addNewBatchRecord}>
+                    <Plus size={14} /> {UI_STRINGS[uiLang].addRecord}
+                  </button>
                   <button className="btn btn-secondary" onClick={downloadExcelTemplate}>
                     <Download size={14} /> {UI_STRINGS[uiLang].downloadTemplate}
                   </button>
                   <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
                     <Upload size={14} /> {UI_STRINGS[uiLang].uploadCsv}
-                    <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} style={{ display: 'none' }} />
+                    <input 
+                      id="excel-upload"
+                      type="file" 
+                      accept=".xlsx, .xls" 
+                      onChange={handleExcelUpload} 
+                      style={{ display: 'none' }} 
+                    />
                   </label>
                 </div>
 
                 {batchData.length > 0 && (
-                  <div className="batch-status-card">
-                    <div className="status-info">
-                      <CheckCircle2 size={20} color="#10b981" />
-                      <div>
-                        <strong>{UI_STRINGS[uiLang].batchSummary.replace('{count}', batchData.length)}</strong>
-                        <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>{UI_STRINGS[uiLang].batchNote}</p>
-                      </div>
-                    </div>
+                  <div className="batch-status-card compact">
+                    <CheckCircle2 size={16} color="#10b981" />
+                    <strong>{UI_STRINGS[uiLang].batchSummary.replace('{count}', batchData.length)}</strong>
                   </div>
                 )}
 
@@ -604,44 +694,109 @@ function App() {
                   <table>
                     <thead>
                       <tr>
-                        {selectedTemplate.fields.map(f => <th key={f.id}>{f.label[uiLang]}</th>)}
+                        {selectedTemplate.fields.map(f => (
+                          <th key={f.id} title={f.label[uiLang]}>
+                            {f.label[uiLang]}
+                          </th>
+                        ))}
+                        <th className="sticky-action-col">{uiLang === 'zh' ? '操作' : 'Action'}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {batchData.length > 0 ? batchData.slice(0, 10).map((row, idx) => (
-                        <tr 
-                          key={idx} 
-                          onClick={() => setPreviewIndex(idx)}
-                          className={previewIndex === idx ? 'active-row' : ''}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {selectedTemplate.fields.map(f => {
-                            const val = row[f.id];
-                            const isCurrency = CURRENCY_FIELDS.includes(f.id);
-                            const displayVal = isCurrency && val ? formatToCurrency(val) : (val || '-');
-                            return <td key={f.id} title={displayVal.toString()}>{displayVal}</td>;
-                          })}
-                        </tr>
-                      )) : (
+                      {batchData.length > 0 ? (
+                        batchData.slice(currentPage * BATCH_PAGE_SIZE, (currentPage + 1) * BATCH_PAGE_SIZE).map((row, idx) => {
+                          const globalIdx = currentPage * BATCH_PAGE_SIZE + idx;
+                          return (
+                            <tr 
+                              key={globalIdx} 
+                              onClick={() => setPreviewIndex(globalIdx)}
+                              className={previewIndex === globalIdx ? 'active-row' : ''}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {selectedTemplate.fields.map(f => {
+                                const val = row[f.id];
+                                const isCurrency = CURRENCY_FIELDS.includes(f.id);
+                                const displayVal = isCurrency && val ? formatToCurrency(val) : (val || '-');
+                                return <td key={f.id} title={displayVal.toString()}>{displayVal}</td>;
+                              })}
+                              <td className="sticky-action-col">
+                                <div className="action-btns">
+                                  <button 
+                                    className="action-btn edit"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openEditModal(globalIdx);
+                                    }}
+                                    title={uiLang === 'zh' ? "编辑" : "Edit"}
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    className="action-btn delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeBatchRecord(globalIdx);
+                                    }}
+                                    title={uiLang === 'zh' ? "移除" : "Remove"}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
                         <tr>
-                          <td colSpan={selectedTemplate.fields.length} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                          <td colSpan={selectedTemplate.fields.length + 1} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                             <div className="batch-empty-hint">
-                              <Table size={40} opacity={0.2} />
-                              <span>{UI_STRINGS[uiLang].batchEmpty}</span>
+                              <div className="empty-icon-wrapper">
+                                <Table size={48} />
+                              </div>
+                              <h3>{UI_STRINGS[uiLang].batchEmpty}</h3>
+                              <p className="action-guide">
+                                {uiLang === 'zh' ? '您可以 ' : 'You can '}
+                                <button className="text-link-btn" onClick={downloadExcelTemplate}>
+                                  {UI_STRINGS[uiLang].downloadTemplate}
+                                </button>
+                                {uiLang === 'zh' ? ' 填写后 ' : ' then '}
+                                <button className="text-link-btn" onClick={() => document.getElementById('excel-upload').click()}>
+                                  {UI_STRINGS[uiLang].uploadData}
+                                </button>
+                                {uiLang === 'zh' ? '，或直接 ' : ', or directly '}
+                                <button className="text-link-btn" onClick={addNewBatchRecord}>
+                                  {UI_STRINGS[uiLang].addRecord}
+                                </button>
+                              </p>
                             </div>
-                          </td>
-                        </tr>
-                      )}
-                      {batchData.length > 10 && (
-                        <tr>
-                          <td colSpan={selectedTemplate.fields.length} style={{ textAlign: 'center', fontSize: '0.75rem', color: '#999' }}>
-                            ... {UI_STRINGS[uiLang].previewOnly} ...
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+
+                {batchData.length > BATCH_PAGE_SIZE && (
+                  <div className="batch-pagination">
+                    <button 
+                      className="page-btn" 
+                      disabled={currentPage === 0}
+                      onClick={() => setCurrentPage(p => p - 1)}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="page-info">
+                      {uiLang === 'zh' ? `第 ${currentPage + 1} / ${Math.ceil(batchData.length / BATCH_PAGE_SIZE)} 页` : `Page ${currentPage + 1} of ${Math.ceil(batchData.length / BATCH_PAGE_SIZE)}`}
+                    </span>
+                    <button 
+                      className="page-btn" 
+                      disabled={(currentPage + 1) * BATCH_PAGE_SIZE >= batchData.length}
+                      onClick={() => setCurrentPage(p => p + 1)}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="fields-container">
@@ -649,6 +804,11 @@ function App() {
                   <div key={field.id} className="form-group">
                     <label htmlFor={'field-' + field.id}>
                       {field.label[uiLang]}
+                      {REQUIRED_FIELDS.includes(field.id) ? (
+                        <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
+                      ) : (
+                        ` (${uiLang === 'zh' ? '可选' : 'Optional'})`
+                      )}
                     </label>
                     {UNIT_FIELDS.includes(field.id) ? (
                       <div className="unit-input-group">
@@ -874,6 +1034,48 @@ function App() {
           </footer>
         </div>
       </div>
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>{uiLang === 'zh' ? '编辑员工信息' : 'Edit Employee Info'}</h3>
+              <button className="close-btn" onClick={() => setIsEditModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="edit-grid">
+                {selectedTemplate.fields.map(f => (
+                  <div key={f.id} className="edit-field">
+                    <label>
+                      {f.label[uiLang]}
+                      {REQUIRED_FIELDS.includes(f.id) ? (
+                        <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>
+                      ) : (
+                        ` (${uiLang === 'zh' ? '可选' : 'Optional'})`
+                      )}
+                    </label>
+                    <input 
+                      type={f.type === 'date' ? 'date' : 'text'}
+                      value={editingData[f.id] || ''}
+                      onChange={(e) => setEditingData({ ...editingData, [f.id]: e.target.value })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setIsEditModalOpen(false)}>
+                {uiLang === 'zh' ? '取消' : 'Cancel'}
+              </button>
+              <button className="btn btn-primary" onClick={saveEdit}>
+                {uiLang === 'zh' ? '保存修改' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
