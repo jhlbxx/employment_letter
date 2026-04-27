@@ -312,54 +312,28 @@ function App() {
   };
 
   // --- Rendering ---
-  return (
-    <div className="app-main-wrapper" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {hasUpdate && (
-        <div style={{
-          background: '#fff7ed',
-          borderBottom: '1px solid #ffedd5',
-          padding: '8px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          fontSize: '0.85rem',
-          color: '#9a3412',
-          animation: 'fadeInDown 0.4s ease',
-          zIndex: 9999
-        }}>
-          <span style={{ 
-            background: '#f97316', 
-            color: 'white', 
-            padding: '2px 6px', 
-            borderRadius: '4px', 
-            fontSize: '0.7rem', 
-            fontWeight: 900 
-          }}>NEW</span>
-          <span>
-            {uiLang === 'zh' 
-              ? `检测到新版本 v${remoteVersion}，请及时联系 Dave Jia 获取更新。` 
-              : `New version v${remoteVersion} available. Please contact Dave Jia for the update.`}
-          </span>
-        </div>
-      )}
+  if (!isAuthorized) {
+    return (
+      <AccessGate
+        uiLang={uiLang} setUiLang={setUiLang}
+        staffId={staffId} setStaffId={setStaffId}
+        accessCode={accessCode} setAccessCode={setAccessCode}
+        handleLogin={handleLogin} pkgVersion={pkg.version}
+        hasUpdate={hasUpdate}
+        remoteVersion={remoteVersion}
+      />
+    );
+  }
 
-      {!isAuthorized ? (
-        <AccessGate
-          uiLang={uiLang} setUiLang={setUiLang}
-          staffId={staffId} setStaffId={setStaffId}
-          accessCode={accessCode} setAccessCode={setAccessCode}
-          handleLogin={handleLogin} pkgVersion={pkg.version}
-        />
-      ) : (
-        <div className="app-container" style={{ 
-          display: 'flex', 
-          flex: 1,
-          width: '100vw', 
-          overflow: 'hidden', 
-          background: '#f8fafc',
-          userSelect: isResizing ? 'none' : 'auto' 
-        }}>
+  return (
+    <div className="app-container" style={{ 
+      display: 'flex', 
+      width: '100vw', 
+      height: '100vh', 
+      overflow: 'hidden', 
+      background: '#f8fafc',
+      userSelect: isResizing ? 'none' : 'auto' 
+    }}>
           {sidebarCollapsed && (
             <div className="expand-handle sidebar-handle" onClick={() => setSidebarCollapsed(false)}>
               <ChevronRight size={16} />
@@ -440,8 +414,6 @@ function App() {
             uiLang={uiLang} selectedTemplate={selectedTemplate}
             editingData={editingData} setEditingData={setEditingData} saveEdit={saveEdit}
           />
-        </div>
-      )}
     </div>
   );
 }

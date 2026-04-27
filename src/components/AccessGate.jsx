@@ -9,7 +9,9 @@ export default function AccessGate({
   accessCode, 
   setAccessCode, 
   handleLogin, 
-  pkgVersion 
+  pkgVersion,
+  hasUpdate,
+  remoteVersion
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,7 +23,23 @@ export default function AccessGate({
             <Fish size={40} color="#3b82f6" />
           </div>
           <h1>DAVE'S FISH & CHIPS</h1>
-          <p>{uiLang === 'zh' ? 'HR标准信函生成系统' : 'HR Standard Letter Generation System'} v{pkgVersion}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <p style={{ margin: 0 }}>{uiLang === 'zh' ? 'HR标准信函生成系统' : 'HR Standard Letter Generation System'} v{pkgVersion}</p>
+            {hasUpdate && (
+              <span style={{ 
+                background: '#f97316', 
+                color: 'white', 
+                padding: '1px 6px', 
+                borderRadius: '4px', 
+                fontSize: '0.65rem', 
+                fontWeight: 900,
+                cursor: 'default',
+                animation: 'pulse 2s infinite'
+              }}>
+                UPDATE v{remoteVersion}
+              </span>
+            )}
+          </div>
         </div>
         
         <form onSubmit={handleLogin}>
