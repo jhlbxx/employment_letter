@@ -70,13 +70,13 @@ function App() {
   useEffect(() => {
     const checkUpdate = async () => {
       try {
-        // 生产环境更新链接：指向您的 GitHub 仓库
-        const response = await fetch('https://raw.githubusercontent.com/jhlbxx/employment_letter/refs/heads/main/package.json');
+        // 使用更通用的 GitHub Raw 地址
+        const response = await fetch('https://raw.githubusercontent.com/jhlbxx/employment_letter/main/package.json');
         if (!response.ok) return;
         const data = await response.json();
 
         // 只有当远程版本号存在且与本地不一致时才提醒
-        if (data.version && data.version !== pkgVersion) {
+        if (data.version && data.version !== pkg.version) {
           setRemoteVersion(data.version);
           setHasUpdate(true);
         }
@@ -312,112 +312,136 @@ function App() {
   };
 
   // --- Rendering ---
-  if (!isAuthorized) {
-    return (
-      <AccessGate
-        uiLang={uiLang} setUiLang={setUiLang}
-        staffId={staffId} setStaffId={setStaffId}
-        accessCode={accessCode} setAccessCode={setAccessCode}
-        handleLogin={handleLogin} pkgVersion={pkg.version}
-      />
-    );
-  }
-
   return (
-    <div className="app-container" style={{ 
-      display: 'flex', 
-      width: '100vw', 
-      height: '100vh', 
-      overflow: 'hidden', 
-      background: '#f8fafc',
-      userSelect: isResizing ? 'none' : 'auto' 
-    }}>
-      
-      {/* 1. Sidebar Handle & Sidebar */}
-      {sidebarCollapsed && (
-        <div className="expand-handle sidebar-handle" onClick={() => setSidebarCollapsed(false)}>
-          <ChevronRight size={16} />
-          <span className="vertical-text" style={{ 
-            writingMode: 'vertical-rl', fontSize: '0.65rem', fontWeight: 700, 
-            color: '#64748b', marginTop: '10px', letterSpacing: '0.1em' 
-          }}>
-            {uiLang === 'zh' ? '展开模板' : 'TEMPLATES'}
+    <div className="app-main-wrapper" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {hasUpdate && (
+        <div style={{
+          background: '#fff7ed',
+          borderBottom: '1px solid #ffedd5',
+          padding: '8px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          fontSize: '0.85rem',
+          color: '#9a3412',
+          animation: 'fadeInDown 0.4s ease',
+          zIndex: 9999
+        }}>
+          <span style={{ 
+            background: '#f97316', 
+            color: 'white', 
+            padding: '2px 6px', 
+            borderRadius: '4px', 
+            fontSize: '0.7rem', 
+            fontWeight: 900 
+          }}>NEW</span>
+          <span>
+            {uiLang === 'zh' 
+              ? `检测到新版本 v${remoteVersion}，请及时联系 Dave Jia 获取更新。` 
+              : `New version v${remoteVersion} available. Please contact Dave Jia for the update.`}
           </span>
         </div>
       )}
-      <Sidebar 
-        sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed}
-        selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate}
-        role={role} uiLang={uiLang} setUiLang={setUiLang}
-        expandedCats={expandedCats} setExpandedCats={setExpandedCats}
-        verifyCode={verifyCode} setVerifyCode={setVerifyCode}
-        verifyResult={verifyResult} setVerifyResult={setVerifyResult}
-        pkgVersion={pkgVersion}
-        hasUpdate={hasUpdate}
-        remoteVersion={remoteVersion}
-      />
 
-      {/* 2. Editor Handle & Editor Pane */}
-      {editorCollapsed && (
-        <div className="expand-handle editor-handle" onClick={() => setEditorCollapsed(false)}>
-          <ChevronRight size={16} />
-          <span className="vertical-text" style={{ 
-            writingMode: 'vertical-rl', fontSize: '0.65rem', fontWeight: 700, 
-            color: '#64748b', marginTop: '10px', letterSpacing: '0.1em' 
-          }}>
-            {uiLang === 'zh' ? '展开编辑' : 'EDITOR'}
-          </span>
-        </div>
-      )}
-      <EditorPane 
-        editorWidth={editorWidth} editorCollapsed={editorCollapsed} setEditorCollapsed={setEditorCollapsed}
-        batchMode={batchMode} setBatchMode={setBatchMode}
-        lang={lang} setLang={setLang}
-        uiLang={uiLang}
-        addNewBatchRecord={() => { setEditingRecordIdx('new'); setEditingData({}); setIsEditModalOpen(true); }}
-        downloadExcelTemplate={downloadExcelTemplate} handleExcelUpload={handleExcelUpload}
-        batchData={batchData} previewIndex={previewIndex} setPreviewIndex={setPreviewIndex}
-        currentPage={currentPage} setCurrentPage={setCurrentPage} BATCH_PAGE_SIZE={BATCH_PAGE_SIZE}
-        openEditModal={(idx) => { setEditingRecordIdx(idx); setEditingData({ ...batchData[idx] }); setIsEditModalOpen(true); }}
-        removeBatchRecord={(idx) => setBatchData(batchData.filter((_, i) => i !== idx))}
-        selectedTemplate={selectedTemplate} formData={formData} handleChange={handleChange}
-        exportPDF={exportPDF} exporting={exporting} runBatchGeneration={runBatchGeneration}
-        isProcessingBatch={isProcessingBatch} batchProgress={batchProgress}
-      />
+      {!isAuthorized ? (
+        <AccessGate
+          uiLang={uiLang} setUiLang={setUiLang}
+          staffId={staffId} setStaffId={setStaffId}
+          accessCode={accessCode} setAccessCode={setAccessCode}
+          handleLogin={handleLogin} pkgVersion={pkg.version}
+        />
+      ) : (
+        <div className="app-container" style={{ 
+          display: 'flex', 
+          flex: 1,
+          width: '100vw', 
+          overflow: 'hidden', 
+          background: '#f8fafc',
+          userSelect: isResizing ? 'none' : 'auto' 
+        }}>
+          {sidebarCollapsed && (
+            <div className="expand-handle sidebar-handle" onClick={() => setSidebarCollapsed(false)}>
+              <ChevronRight size={16} />
+              <span className="vertical-text" style={{ 
+                writingMode: 'vertical-rl', fontSize: '0.65rem', fontWeight: 700, 
+                color: '#64748b', marginTop: '10px', letterSpacing: '0.1em' 
+              }}>
+                {uiLang === 'zh' ? '展开模板' : 'TEMPLATES'}
+              </span>
+            </div>
+          )}
+          <Sidebar 
+            sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed}
+            selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate}
+            role={role} uiLang={uiLang} setUiLang={setUiLang}
+            expandedCats={expandedCats} setExpandedCats={setExpandedCats}
+            verifyCode={verifyCode} setVerifyCode={setVerifyCode}
+            verifyResult={verifyResult} setVerifyResult={setVerifyResult}
+            pkgVersion={pkg.version}
+            hasUpdate={hasUpdate}
+            remoteVersion={remoteVersion}
+          />
 
-      {!editorCollapsed && (
-        <div className="editor-resizer" onMouseDown={() => setIsResizing(true)} />
-      )}
-
-      <div className="right-workspace" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, position: 'relative' }}>
-        <MainHeader role={role} staffId={staffId} userName={userName} uiLang={uiLang} setUiLang={setUiLang} logout={logout} roleLabel={roleLabel} />
-
-        {/* 预览区 */}
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          <PreviewPane 
-            selectedTemplate={selectedTemplate}
-            formData={formData}
-            staffId={staffId}
+          {editorCollapsed && (
+            <div className="expand-handle editor-handle" onClick={() => setEditorCollapsed(false)}>
+              <ChevronRight size={16} />
+              <span className="vertical-text" style={{ 
+                writingMode: 'vertical-rl', fontSize: '0.65rem', fontWeight: 700, 
+                color: '#64748b', marginTop: '10px', letterSpacing: '0.1em' 
+              }}>
+                {uiLang === 'zh' ? '展开编辑' : 'EDITOR'}
+              </span>
+            </div>
+          )}
+          <EditorPane 
+            editorWidth={editorWidth} editorCollapsed={editorCollapsed} setEditorCollapsed={setEditorCollapsed}
+            batchMode={batchMode} setBatchMode={setBatchMode}
+            lang={lang} setLang={setLang}
             uiLang={uiLang}
-            lang={lang}
-            batchMode={batchMode}
-            batchData={batchData}
-            previewIndex={previewIndex}
-            setPreviewIndex={setPreviewIndex}
+            addNewBatchRecord={() => { setEditingRecordIdx('new'); setEditingData({}); setIsEditModalOpen(true); }}
+            downloadExcelTemplate={downloadExcelTemplate} handleExcelUpload={handleExcelUpload}
+            batchData={batchData} previewIndex={previewIndex} setPreviewIndex={setPreviewIndex}
+            currentPage={currentPage} setCurrentPage={setCurrentPage} BATCH_PAGE_SIZE={BATCH_PAGE_SIZE}
+            openEditModal={(idx) => { setEditingRecordIdx(idx); setEditingData({ ...batchData[idx] }); setIsEditModalOpen(true); }}
+            removeBatchRecord={(idx) => setBatchData(batchData.filter((_, i) => i !== idx))}
+            selectedTemplate={selectedTemplate} formData={formData} handleChange={handleChange}
+            exportPDF={exportPDF} exporting={exporting} runBatchGeneration={runBatchGeneration}
+            isProcessingBatch={isProcessingBatch} batchProgress={batchProgress}
+          />
+
+          {!editorCollapsed && (
+            <div className="editor-resizer" onMouseDown={() => setIsResizing(true)} />
+          )}
+
+          <div className="right-workspace" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, position: 'relative' }}>
+            <MainHeader role={role} staffId={staffId} userName={userName} uiLang={uiLang} setUiLang={setUiLang} logout={logout} roleLabel={roleLabel} />
+            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              <PreviewPane 
+                selectedTemplate={selectedTemplate}
+                formData={formData}
+                staffId={staffId}
+                uiLang={uiLang}
+                lang={lang}
+                batchMode={batchMode}
+                batchData={batchData}
+                previewIndex={previewIndex}
+                setPreviewIndex={setPreviewIndex}
+              />
+            </div>
+          </div>
+
+          <BatchWorker
+            batchWorkerRef={batchWorkerRef} staffId={staffId}
+            selectedTemplate={selectedTemplate} currentBatchItem={currentBatchItem} lang={lang}
+          />
+          <EditModal
+            isEditModalOpen={isEditModalOpen} setIsEditModalOpen={setIsEditModalOpen}
+            uiLang={uiLang} selectedTemplate={selectedTemplate}
+            editingData={editingData} setEditingData={setEditingData} saveEdit={saveEdit}
           />
         </div>
-      </div>
-
-      <BatchWorker
-        batchWorkerRef={batchWorkerRef} staffId={staffId}
-        selectedTemplate={selectedTemplate} currentBatchItem={currentBatchItem} lang={lang}
-      />
-
-      <EditModal
-        isEditModalOpen={isEditModalOpen} setIsEditModalOpen={setIsEditModalOpen}
-        uiLang={uiLang} selectedTemplate={selectedTemplate}
-        editingData={editingData} setEditingData={setEditingData} saveEdit={saveEdit}
-      />
+      )}
     </div>
   );
 }
