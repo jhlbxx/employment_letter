@@ -71,7 +71,7 @@ function App() {
     const checkUpdate = async () => {
       try {
         // 生产环境更新链接：指向您的 GitHub 仓库
-        const UPDATE_URL = 'https://raw.githubusercontent.com/jhlbxx/employment_letter/refs/heads/main/package.json';
+        const UPDATE_URL = 'https://raw.githubusercontent.com/jhlbxx/employment_letter/refs/heads/feature/layout-upgrade/package.json';
 
         const response = await fetch(UPDATE_URL);
         if (!response.ok) return;
@@ -151,12 +151,12 @@ function App() {
   useEffect(() => {
     const resize = (e) => {
       if (isResizing) {
-        const mainContent = document.querySelector('.main-content');
-        if (mainContent) {
-          const newWidth = e.clientX - mainContent.getBoundingClientRect().left;
-          if (newWidth > 300 && newWidth < 800) {
-            setEditorWidth(newWidth);
-          }
+        // 侧边栏宽度：展开时 280px，收起时拉手 32px
+        const sidebarWidth = sidebarCollapsed ? 32 : 280;
+        const newWidth = e.clientX - sidebarWidth;
+        
+        if (newWidth > 300 && newWidth < 800) {
+          setEditorWidth(newWidth);
         }
       }
     };
