@@ -18,7 +18,9 @@ export default function Sidebar({
   setVerifyCode,
   verifyResult,
   setVerifyResult,
-  pkgVersion
+  pkgVersion,
+  hasUpdate,
+  remoteVersion
 }) {
   return (
     <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
@@ -168,6 +170,34 @@ export default function Sidebar({
                 ⚠️ {uiLang === 'zh' ? '该雇主信可能是伪造！' : 'This letter might be FORGED!'}
               </div>
             )}
+          </div>
+        )}
+
+        {hasUpdate && !sidebarCollapsed && (
+          <div className="update-notification-sidebar" style={{
+            background: '#fff7ed',
+            border: '1px solid #ffedd5',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            marginBottom: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ 
+                background: '#f97316', 
+                color: 'white', 
+                padding: '1px 5px', 
+                borderRadius: '3px', 
+                fontSize: '0.65rem', 
+                fontWeight: 900 
+              }}>NEW</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9a3412' }}>v{remoteVersion}</span>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#c2410c', lineHeight: '1.2' }}>
+              {uiLang === 'zh' ? '检测到新版本，请联系管理员更新。' : 'New version detected. Please contact Admin.'}
+            </div>
           </div>
         )}
 

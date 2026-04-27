@@ -345,7 +345,9 @@ function App() {
         expandedCats={expandedCats} setExpandedCats={setExpandedCats}
         verifyCode={verifyCode} setVerifyCode={setVerifyCode}
         verifyResult={verifyResult} setVerifyResult={setVerifyResult}
-        pkgVersion={pkg.version}
+        pkgVersion={pkgVersion}
+        hasUpdate={hasUpdate}
+        remoteVersion={remoteVersion}
       />
 
       {/* 2. Editor Handle & Editor Pane */}
@@ -383,21 +385,6 @@ function App() {
       <div className="right-workspace" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, position: 'relative' }}>
         <MainHeader role={role} staffId={staffId} userName={userName} uiLang={uiLang} setUiLang={setUiLang} logout={logout} roleLabel={roleLabel} />
 
-        {hasUpdate && (
-          <div style={{
-            background: '#fff7ed', borderBottom: '1px solid #ffedd5',
-            padding: '8px 20px', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', gap: '10px', fontSize: '0.85rem', color: '#9a3412'
-          }}>
-            <span style={{
-              background: '#f97316', color: 'white', padding: '2px 8px',
-              borderRadius: '4px', fontWeight: 'bold', fontSize: '0.7rem'
-            }}>NEW</span>
-            {uiLang === 'zh'
-              ? `检测到新版本 v${remoteVersion}，请及时联系 Dave Jia 获取更新。`
-              : `New version v${remoteVersion} available. Please contact Dave Jia for the update.`}
-          </div>
-        )}
         {/* 预览区 */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           <PreviewPane 
