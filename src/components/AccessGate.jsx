@@ -4,16 +4,19 @@ import { Fish, Eye, EyeOff } from 'lucide-react';
 export default function AccessGate({ 
   uiLang, 
   setUiLang, 
-  staffId, 
-  setStaffId, 
-  accessCode, 
-  setAccessCode, 
   handleLogin, 
   pkgVersion,
   hasUpdate,
   remoteVersion
 }) {
+  const [localStaffId, setLocalStaffId] = useState('');
+  const [localAccessCode, setLocalAccessCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const onFormSubmit = (e) => {
+    e.preventDefault();
+    handleLogin(localStaffId, localAccessCode);
+  };
 
   return (
     <div className="access-gate">
@@ -42,7 +45,7 @@ export default function AccessGate({
           </div>
         </div>
         
-        <form onSubmit={handleLogin}>
+        <form onSubmit={onFormSubmit}>
           <div className="input-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <label style={{ margin: 0 }}>{uiLang === 'zh' ? 'W3 工号' : 'W3 ID'}</label>
@@ -71,8 +74,8 @@ export default function AccessGate({
               type="text" 
               placeholder="e.g. 007" 
               autoComplete="off"
-              value={staffId} 
-              onChange={(e) => setStaffId(e.target.value)} 
+              value={localStaffId} 
+              onChange={(e) => setLocalStaffId(e.target.value)} 
               style={{ pointerEvents: 'auto' }}
             />
           </div>
@@ -85,8 +88,8 @@ export default function AccessGate({
                 className={uiLang === 'en' ? 'en-placeholder' : ''}
                 placeholder={uiLang === 'zh' ? "非W3登录密码，请联系Dave Jia获取" : "NOT W3 password, contact Dave Jia for access code"} 
                 autoComplete="off"
-                value={accessCode} 
-                onChange={(e) => setAccessCode(e.target.value)} 
+                value={localAccessCode} 
+                onChange={(e) => setLocalAccessCode(e.target.value)} 
                 style={{ paddingRight: '45px', pointerEvents: 'auto' }}
               />
               <button

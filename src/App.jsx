@@ -97,20 +97,21 @@ function App() {
     'employment relations': { zh: '员工关系专员', en: 'ER Specialist' }
   };
 
-  const handleLogin = (e) => {
-    if (e) e.preventDefault();
-    if (!staffId.trim() || !accessCode.trim()) return;
+  const handleLogin = (passedStaffId, passedAccessCode) => {
+    if (!passedStaffId.trim() || !passedAccessCode.trim()) return;
 
     // Find matching user in config
     const user = USER_CONFIG.find(u =>
-      u.staffId === staffId.trim() && u.accessCode === accessCode.trim()
+      u.staffId === passedStaffId.trim() && u.accessCode === passedAccessCode.trim()
     );
 
     if (user) {
+      setStaffId(passedStaffId);
+      setAccessCode(passedAccessCode);
       setRole(user.role);
       setUserName(user.name);
       setIsAuthorized(true);
-      localStorage.setItem('hr_staff_id', staffId);
+      localStorage.setItem('hr_staff_id', passedStaffId);
     } else {
       alert(uiLang === 'zh' ? '工号或准入码错误，请重新核对！' : 'Invalid ID or Access Code. Please check again!');
     }
@@ -319,8 +320,6 @@ function App() {
       <AccessGate
         key={isAuthorized ? 'authorized' : 'unauthorized'}
         uiLang={uiLang} setUiLang={setUiLang}
-        staffId={staffId} setStaffId={setStaffId}
-        accessCode={accessCode} setAccessCode={setAccessCode}
         handleLogin={handleLogin} pkgVersion={pkg.version}
         hasUpdate={hasUpdate}
         remoteVersion={remoteVersion}
