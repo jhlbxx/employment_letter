@@ -287,11 +287,17 @@ function App() {
     }
     setExporting(true);
     try {
-      const finalFilename = sanitizeFilename(`${formData.employeeName} - Daves fish and ships - ${selectedTemplate.name[uiLang]}.pdf`);
+      const finalFilename = sanitizeFilename(`${formData.employeeName} - Daves fish and chips - ${selectedTemplate.name[uiLang]}.pdf`);
       await html2pdf().set({
-        margin: 0, filename: finalFilename, image: { type: 'jpeg', quality: 1.0 },
+        margin: 0, 
+        filename: finalFilename, 
+        image: { type: 'jpeg', quality: 0.98 },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+        html2canvas: { 
+          scale: 2, // 降低到 2 倍，提高 Electron 环境下的渲染成功率
+          useCORS: true, 
+          letterRendering: true 
+        },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
       }).from(letterRef.current).save();
     } catch (err) {
@@ -394,6 +400,7 @@ function App() {
             <MainHeader role={role} staffId={staffId} userName={userName} uiLang={uiLang} setUiLang={setUiLang} logout={logout} roleLabel={roleLabel} />
             <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
               <PreviewPane 
+                letterRef={letterRef}
                 selectedTemplate={selectedTemplate}
                 formData={formData}
                 staffId={staffId}

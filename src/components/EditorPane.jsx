@@ -288,7 +288,13 @@ export default function EditorPane({
             className="btn btn-primary"
             onClick={exportPDF}
             disabled={exporting}
-            style={{ width: '100%' }}
+            style={{ 
+              width: 'auto', 
+              minWidth: '160px', 
+              margin: '0 auto', 
+              display: 'flex', 
+              justifyContent: 'center' 
+            }}
           >
             <Download size={16} />
             {exporting ? (UI_STRINGS[uiLang]?.exporting || '...') : (UI_STRINGS[uiLang]?.exportBtn || 'Export')}
@@ -299,7 +305,13 @@ export default function EditorPane({
               className="btn btn-primary" 
               onClick={runBatchGeneration}
               disabled={isProcessingBatch}
-              style={{ width: '100%' }}
+              style={{ 
+                width: 'auto', 
+                minWidth: '200px', 
+                margin: '0 auto', 
+                display: 'flex', 
+                justifyContent: 'center' 
+              }}
             >
               {isProcessingBatch ? (
                 <>
