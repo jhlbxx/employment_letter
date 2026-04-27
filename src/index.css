@@ -322,18 +322,21 @@ html {
 
 /* ── Editor Pane ── */
 .editor-pane {
-  width: 550px;
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #e2e8f0;
-  padding: 20px 20px 16px 20px;
+  padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Standardized gap */
   transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 5;
+}
+
+.editor-pane>*:not(.editor-header):not(.editor-footer) {
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .editor-footer {
@@ -380,10 +383,13 @@ html {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafafa;
 }
 
 .editor-header h2 {
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 700;
   margin: 0;
 }
@@ -593,32 +599,24 @@ html {
   gap: 12px;
   cursor: pointer;
   flex-shrink: 0;
-  /* Take up physical space */
   z-index: 100;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
 }
 
 .expand-handle:hover {
   background: #f1f5f9;
+  width: 36px;
 }
 
-.expand-handle:hover .vertical-text {
-  color: var(--primary);
+.sidebar-handle,
+.editor-handle {
+  border-right: 1px solid #e2e8f0;
 }
 
-.vertical-text {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--text-muted);
-  transition: color 0.2s;
-}
-
-.sidebar-handle {
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
+.expand-handle:hover {
+  background: #f1f5f9;
+  width: 34px;
 }
 
 .controls {
@@ -672,7 +670,8 @@ html {
 .letter-content {
   font-family: 'Calibri', 'Inter', sans-serif;
   font-size: 11pt;
-  line-height: 1.5; /* Updated from 1.2 */
+  line-height: 1.5;
+  /* Updated from 1.2 */
   text-align: left;
   white-space: pre-wrap;
   color: #1a1a1a;
@@ -696,7 +695,8 @@ html {
 .batch-editor {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Standardized internal gap */
+  gap: 20px;
+  /* Standardized internal gap */
   flex: 1;
   overflow: hidden;
   /* Batch mode stays fixed */
@@ -705,7 +705,8 @@ html {
 .batch-actions {
   display: flex;
   gap: 10px;
-  margin-top: 4px; /* Give enough head room for the hover jump */
+  margin-top: 4px;
+  /* Give enough head room for the hover jump */
 }
 
 .batch-actions .btn {
@@ -721,7 +722,8 @@ html {
   background: #fff;
   border-color: var(--primary-light);
   color: var(--primary);
-  transform: translateY(-2px); /* It's back! */
+  transform: translateY(-2px);
+  /* It's back! */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -784,10 +786,12 @@ html {
   border-right: none;
 }
 
-.batch-preview-table th, 
+.batch-preview-table th,
 .batch-preview-table td {
-  padding: 8px 12px; /* Tightened padding slightly for smaller font */
-  font-size: 0.75rem; /* Matches button font size */
+  padding: 8px 12px;
+  /* Tightened padding slightly for smaller font */
+  font-size: 0.75rem;
+  /* Matches button font size */
   border-bottom: 1px solid #e2e8f0;
   border-right: 1.5px solid #cbd5e1;
   white-space: nowrap;
@@ -1276,23 +1280,172 @@ html {
     display: block !important;
   }
 }
-/* --- New Premium Styles --- */
-.access-gate { position: fixed; inset: 0; background: radial-gradient(circle at top right, #1e3a8a, #0f172a); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-.login-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); width: 100%; max-width: 420px; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.login-header { text-align: center; margin-bottom: 32px; }
-.login-header h1 { margin: 12px 0 4px; font-size: 1.5rem; color: #1e1b4b; letter-spacing: -0.02em; }
-.input-group { margin-bottom: 20px; }
-.input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
-.input-group input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 1rem; transition: all 0.2s; }
-.input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); background: white; }
-.login-btn { width: 100%; padding: 14px; border-radius: 12px; background: #2563eb; color: white; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 10px; }
-.main-header { height: 56px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.identity-badge { display: flex; align-items: center; gap: 6px; background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-.identity-badge.staff-badge { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-.logout-btn-top { display: flex; align-items: center; gap: 6px; background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; padding: 6px 14px; border-radius: 8px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-.workspace-body { display: flex; flex: 1; overflow: hidden; position: relative; }
 
-.main-header { z-index: 1000 !important; position: relative; }
-.logout-btn-top { z-index: 1001 !important; cursor: pointer !important; position: relative; }
+/* --- New Premium Styles --- */
+.access-gate {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at top right, #1e3a8a, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-header h1 {
+  margin: 12px 0 4px;
+  font-size: 1.5rem;
+  color: #1e1b4b;
+  letter-spacing: -0.02em;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.login-card .input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.login-card input::placeholder {
+  font-size: 0.8rem !important;
+  opacity: 0.7;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 10px;
+}
+
+.main-header {
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.identity-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.identity-badge.staff-badge {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.logout-btn-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.workspace-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.main-header {
+  z-index: 1000 !important;
+  position: relative;
+}
+
+.logout-btn-top {
+  z-index: 1001 !important;
+  cursor: pointer !important;
+  position: relative;
+}
+
+.en-placeholder::placeholder {
+  font-size: 0.8rem;
+  letter-spacing: -0.01em;
+}
