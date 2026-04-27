@@ -585,6 +585,29 @@ html {
   gap: 20px;
   min-width: 0;
   position: relative;
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Premium Scrollbar */
+.preview-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.preview-pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.preview-pane::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.preview-pane::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: content-box;
 }
 
 .expand-handle {

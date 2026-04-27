@@ -119,8 +119,10 @@ function App() {
   const logout = () => {
     if (window.confirm(uiLang === 'zh' ? '确定要退出系统吗？' : 'Are you sure you want to logout?')) {
       setIsAuthorized(false);
+      setStaffId('');
       setAccessCode('');
       setRole(null);
+      setIsResizing(false);
     }
   };
 
@@ -315,6 +317,7 @@ function App() {
   if (!isAuthorized) {
     return (
       <AccessGate
+        key={isAuthorized ? 'authorized' : 'unauthorized'}
         uiLang={uiLang} setUiLang={setUiLang}
         staffId={staffId} setStaffId={setStaffId}
         accessCode={accessCode} setAccessCode={setAccessCode}

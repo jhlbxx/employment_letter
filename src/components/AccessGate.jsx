@@ -70,8 +70,10 @@ export default function AccessGate({
               required 
               type="text" 
               placeholder="e.g. 007" 
+              autoComplete="off"
               value={staffId} 
               onChange={(e) => setStaffId(e.target.value)} 
+              style={{ pointerEvents: 'auto' }}
             />
           </div>
           <div className="input-group">
@@ -82,9 +84,10 @@ export default function AccessGate({
                 type={showPassword ? "text" : "password"} 
                 className={uiLang === 'en' ? 'en-placeholder' : ''}
                 placeholder={uiLang === 'zh' ? "非W3登录密码，请联系Dave Jia获取" : "NOT W3 password, contact Dave Jia for access code"} 
+                autoComplete="off"
                 value={accessCode} 
                 onChange={(e) => setAccessCode(e.target.value)} 
-                style={{ paddingRight: '45px' }}
+                style={{ paddingRight: '45px', pointerEvents: 'auto' }}
               />
               <button
                 type="button"
