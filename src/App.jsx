@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { templates } from './templates';
 import { Fish, Download, Printer, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import pkg from '../package.json';
-import { Languages, Table, Upload, FileText, CheckCircle2, AlertCircle, Loader2, Trash2, Edit2, X, Plus } from 'lucide-react';
+import { Languages, Table, Upload, FileText, CheckCircle2, AlertCircle, Loader2, Trash2, Edit2, X, Plus, ShieldCheck } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import Papa from 'papaparse';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -202,9 +203,58 @@ function renderTemplate(content, data = {}, lang) {
     out = out.split('{{' + key + '}}').join(placeholder);
   });
 
-  // Convert **bold** to <b>
   out = out.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
   return out;
+}
+
+const SEC_KEY = "DAVE_PARTNER_2024";
+
+/** Encrypts/Decrypts string using simple XOR with SEC_KEY */
+function xorCipher(text) {
+  return text.split('').map((char, i) => 
+    String.fromCharCode(char.charCodeAt(0) ^ SEC_KEY.charCodeAt(i % SEC_KEY.length))
+  ).join('');
+}
+
+/** Generates a SECURE obfuscated security string for the QR code */
+function generateSecurityCode(staffId, templateId, data) {
+  const ts = new Date().toISOString();
+  const empName = data.employeeName || 'UNKNOWN';
+  
+  // Find ALL fields related to money (salary, pay, bonus, compensation, wage, allowance, base, etc.)
+  const moneyFields = Object.keys(data).filter(key => 
+    /salary|pay|bonus|comp|wage|income|allowance|base/i.test(key) && data[key]
+  ).map(key => `${key}:${data[key]}`).join('; ');
+  
+  const moneyInfo = moneyFields || 'N/A';
+  
+  // Payload: StaffId|Template|Name|MoneyInfo|ISO_Time
+  const raw = `DAVE|${staffId}|${templateId}|${empName}|${moneyInfo}|${ts}`;
+  try {
+    // XOR Encryption -> Base64
+    return btoa(unescape(encodeURIComponent(xorCipher(raw))));
+  } catch(e) {
+    return 'SEC-ERR-INVALID-DATA';
+  }
+}
+
+/** Decodes the obfuscated security string back to readable info */
+function decodeSecurityCode(code) {
+  try {
+    // Base64 -> XOR Decryption
+    const decrypted = xorCipher(decodeURIComponent(escape(atob(code))));
+    const parts = decrypted.split('|');
+    if (parts[0] !== 'DAVE') throw new Error('Invalid Signature');
+    return {
+      staffId: parts[1],
+      templateId: parts[2],
+      employeeName: parts[3],
+      salary: parts[4],
+      time: parts[5]
+    };
+  } catch(e) {
+    return null;
+  }
 }
 
 // ── App ───────────────────────────────────────────────────────────────────────
@@ -219,6 +269,9 @@ function App() {
   const [expandedCats, setExpandedCats] = useState([]);
   const [editorWidth, setEditorWidth] = useState(550);
   const [isResizing, setIsResizing] = useState(false);
+  const [staffId, setStaffId] = useState(localStorage.getItem('hr_staff_id') || 'ADMIN_TEMP');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyResult, setVerifyResult] = useState(null);
   
   // Batch Mode States
   const [batchMode, setBatchMode] = useState(false);
@@ -482,13 +535,29 @@ function App() {
 
   const exportPDF = async () => {
     if (!letterRef.current || exporting) return;
+    
+    // Validate: Employee Name is mandatory for export
+    if (!formData.employeeName || formData.employeeName.trim() === '') {
+      const msg = uiLang === 'zh' 
+        ? '无法导出：请输入收信人姓名！' 
+        : 'Cannot export: Please enter the Recipient Name!';
+      alert(msg);
+      return;
+    }
+
     setExporting(true);
     try {
-      const filename = selectedTemplate?.name[sidebarLang(lang)] || 'Letter';
+      const employeeName = formData.employeeName || (uiLang === 'zh' ? '员工' : 'Employee');
+      const companyName = "Daves fish and ships";
+      const templateName = selectedTemplate.name[uiLang];
+      
+      const rawFileName = `${employeeName} - ${companyName} - ${templateName}.pdf`;
+      const finalFilename = sanitizeFilename(rawFileName);
+
       await html2pdf()
         .set({
           margin: 0,
-          filename: `${filename}.pdf`,
+          filename: finalFilename,
           image: { type: 'jpeg', quality: 1.0 },
           pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
           html2canvas: { scale: 3, useCORS: true, letterRendering: true },
@@ -588,6 +657,92 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
+          {/* Security Decoder Tool */}
+          <div className="decoder-tool" style={{
+            background: '#f8fafc',
+            padding: '10px',
+            borderRadius: '8px',
+            border: '1px dashed #cbd5e1',
+            marginBottom: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#475569', fontWeight: 700, fontSize: '0.7rem' }}>
+              <ShieldCheck size={14} /> {uiLang === 'zh' ? '防伪验证' : 'Authenticity Verification'}
+            </div>
+            <input 
+              type="text"
+              placeholder={uiLang === 'zh' ? "粘贴防伪码进行核验..." : "Paste security code..."}
+              value={verifyCode}
+              onChange={(e) => {
+                const val = e.target.value;
+                setVerifyCode(val);
+                if (val) setVerifyResult(decodeSecurityCode(val));
+                else setVerifyResult(null);
+              }}
+              style={{ 
+                width: '100%', 
+                fontSize: '0.65rem', 
+                padding: '5px', 
+                borderRadius: '4px',
+                border: '1px solid #e2e8f0',
+                marginBottom: '8px'
+              }}
+            />
+            {verifyResult ? (
+                <div style={{ 
+                  fontSize: '0.6rem', 
+                  background: '#f0fdf4', 
+                  padding: '8px', 
+                  borderRadius: '4px',
+                  border: '1px solid #bbf7d0',
+                  color: '#166534'
+                }}>
+                  <div style={{ fontWeight: 800, marginBottom: '6px', borderBottom: '1px solid #bbf7d0', paddingBottom: '4px' }}>
+                    ✅ {uiLang === 'zh' ? '核验通过' : 'VERIFIED'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div>{uiLang === 'zh' ? 'HR工号' : 'HR ID'}: <strong>{verifyResult.staffId}</strong></div>
+                    <div>{uiLang === 'zh' ? '收信人' : 'Recipient'}: <strong>{verifyResult.employeeName}</strong></div>
+                    <div style={{ marginTop: '4px' }}>
+                      {uiLang === 'zh' ? '核定薪资' : 'Approved Salary'}:
+                      <div style={{ paddingLeft: '8px', marginTop: '2px', color: '#166534', fontSize: '0.55rem' }}>
+                        {verifyResult.salary.split('; ').map((item, idx) => {
+                          const [key, val] = item.split(':');
+                          // Simple mapping for common IDs
+                          const labelMap = {
+                            salary: { zh: '年薪', en: 'Annual Salary' },
+                            monthlyBase: { zh: '月基本工资', en: 'Monthly Base' },
+                            annualBonus: { zh: '年终奖金', en: 'Annual Bonus' },
+                            statutoryComp: { zh: '法定赔偿金', en: 'Statutory Comp' },
+                            extraComp: { zh: '额外赔偿金', en: 'Extra Comp' },
+                            probationSalary: { zh: '试用期薪资', en: 'Probation Salary' }
+                          };
+                          const label = labelMap[key] ? labelMap[key][uiLang] : key;
+                          return <div key={idx}>• {label}: <strong>{val}</strong></div>;
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px dashed #bbf7d0' }}>
+                      {uiLang === 'zh' ? '制作时间' : 'Created At'}: <br/>
+                      <strong>{new Date(verifyResult.time).toLocaleString()}</strong>
+                    </div>
+                  </div>
+                </div>
+            ) : verifyCode && (
+              <div style={{ 
+                fontSize: '0.65rem', 
+                color: '#ef4444', 
+                background: '#fef2f2', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                textAlign: 'center',
+                border: '1px solid #fecaca',
+                fontWeight: 700
+              }}>
+                ⚠️ {uiLang === 'zh' ? '该雇主信可能是伪造！' : 'This letter might be FORGED!'}
+              </div>
+            )}
+          </div>
+
           <div className="version-info">
             {UI_STRINGS[uiLang].version}: v{pkg.version}
           </div>
@@ -942,12 +1097,44 @@ function App() {
           <div className="letter-paper" ref={letterRef}>
             {/* Letter Header */}
             <header className="letter-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div className="logo-icon" style={{ width: 32, height: 32, borderRadius: 8 }}>
-                  <Fish size={18} />
+                {/* Security QR Code - Positioned absolutely in top-right */}
+                <div className="qr-security-box" style={{ 
+                  position: 'absolute',
+                  bottom: '15px',
+                  right: '15px',
+                  textAlign: 'right',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  zIndex: 20
+                }}>
+                  <QRCodeSVG 
+                    value={generateSecurityCode(
+                      staffId, 
+                      selectedTemplate.id, 
+                      (batchMode && batchData.length > 0) ? batchData[previewIndex] : formData
+                    )}
+                    size={50}
+                    level="L"
+                    includeMargin={true}
+                  />
+                  <span style={{ 
+                    fontSize: '6px', 
+                    color: '#cbd5e1', 
+                    marginTop: '2px',
+                    fontFamily: 'monospace'
+                  }}>
+                    {generateSecurityCode(staffId, selectedTemplate.id, (batchMode && batchData.length > 0) ? batchData[previewIndex] : formData).substring(0, 6)}
+                  </span>
                 </div>
-                <div className="letter-logo-text">DAVE'S FISH &amp; CHIPS</div>
-              </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="logo-icon" style={{ width: 32, height: 32, borderRadius: 8 }}>
+                    <Fish size={18} />
+                  </div>
+                  <div className="letter-logo-text">DAVE'S FISH &amp; CHIPS</div>
+                </div>
+
               <div className="letter-contact-info">
                 1234 Granville St, Vancouver, BC V6Z 1M4, Canada<br />
                 Phone: +1 (604) 555-0199<br />
@@ -999,12 +1186,28 @@ function App() {
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         <div className="letter-paper" ref={batchWorkerRef}>
           <header className="letter-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="logo-icon" style={{ width: 32, height: 32, borderRadius: 8 }}>
-                <Fish size={18} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+              {/* Security QR Code - Absolute */}
+              <div className="qr-security-box" style={{ position: 'absolute', bottom: '15px', right: '15px', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <QRCodeSVG 
+                  value={generateSecurityCode(staffId, selectedTemplate.id, currentBatchItem || {})}
+                  size={50}
+                  level="L"
+                  includeMargin={true}
+                />
+                <span style={{ fontSize: '6px', color: '#cbd5e1', marginTop: '2px', fontFamily: 'monospace' }}>
+                  {generateSecurityCode(staffId, selectedTemplate.id, currentBatchItem || {}).substring(0, 6)}
+                </span>
               </div>
-              <div className="letter-logo-text">DAVE'S FISH &amp; CHIPS</div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="logo-icon" style={{ width: 32, height: 32, borderRadius: 8 }}>
+                  <Fish size={18} />
+                </div>
+                <div className="letter-logo-text">DAVE'S FISH &amp; CHIPS</div>
+              </div>
             </div>
+
             <div className="letter-contact-info">
               1234 Granville St, Vancouver, BC V6Z 1M4, Canada<br />
               Phone: +1 (604) 555-0199<br />
