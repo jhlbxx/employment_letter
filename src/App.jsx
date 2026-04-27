@@ -269,7 +269,46 @@ function App() {
   const [expandedCats, setExpandedCats] = useState([]);
   const [editorWidth, setEditorWidth] = useState(550);
   const [isResizing, setIsResizing] = useState(false);
-  const [staffId, setStaffId] = useState(localStorage.getItem('hr_staff_id') || 'ADMIN_TEMP');
+  const [staffId, setStaffId] = useState(localStorage.getItem('hr_staff_id') || '');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [role, setRole] = useState(null); 
+
+  const roleLabel = {
+    admin: { zh: '管理员', en: 'Admin' },
+    recruitment: { zh: '招聘职能', en: 'Recruitment' },
+    legal: { zh: '离职/法务职能', en: 'Legal/Relations' }
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (!staffId.trim()) return;
+    
+    if (accessCode === 'JOIN2024') {
+      setRole('recruitment');
+      setIsAuthorized(true);
+      localStorage.setItem('hr_staff_id', staffId);
+    } else if (accessCode === 'EXIT2024') {
+      setRole('legal');
+      setIsAuthorized(true);
+      localStorage.setItem('hr_staff_id', staffId);
+    } else if (accessCode === 'ADMIN999') {
+      setRole('admin');
+      setIsAuthorized(true);
+      localStorage.setItem('hr_staff_id', staffId);
+    } else {
+      alert(uiLang === 'zh' ? '准入码无效，请重试！' : 'Invalid Access Code. Please try again!');
+    }
+  };
+
+  const logout = () => {
+    if (window.confirm(uiLang === 'zh' ? '确定要退出系统吗？' : 'Are you sure you want to logout?')) {
+      setIsAuthorized(false);
+      setAccessCode('');
+      setRole(null);
+    }
+  };
+
   const [verifyCode, setVerifyCode] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
   
@@ -578,6 +617,53 @@ function App() {
 
   const sl = sidebarLang(lang);
 
+  if (!isAuthorized) {
+    return (
+      <div className="access-gate">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="login-logo">
+              <Fish size={40} color="#3b82f6" />
+            </div>
+            <h1>DAVE'S FISH & CHIPS</h1>
+            <p>HR Management System v{pkg.version}</p>
+          </div>
+          
+          <form onSubmit={handleLogin}>
+            <div className="input-group">
+              <label>{uiLang === 'zh' ? 'HR 工号' : 'Staff ID'}</label>
+              <input 
+                required 
+                type="text" 
+                placeholder="e.g. 007" 
+                value={staffId} 
+                onChange={(e) => setStaffId(e.target.value)} 
+              />
+            </div>
+            <div className="input-group">
+              <label>{uiLang === 'zh' ? '准入码' : 'Access Code'}</label>
+              <input 
+                required 
+                type="password" 
+                placeholder="••••••••" 
+                value={accessCode} 
+                onChange={(e) => setAccessCode(e.target.value)} 
+              />
+            </div>
+            <button type="submit" className="login-btn">
+              {uiLang === 'zh' ? '开启职能空间' : 'Enter Workspace'}
+            </button>
+          </form>
+          <div className="login-footer">
+            <button className="lang-btn" onClick={() => setUiLang(uiLang === 'zh' ? 'en' : 'zh')}>
+              {uiLang === 'zh' ? 'Switch to English' : '切换至中文'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
 
@@ -622,7 +708,12 @@ function App() {
             { id: 'employment', label: UI_STRINGS[uiLang].catEmployment },
             { id: 'notice', label: UI_STRINGS[uiLang].catNotice },
             { id: 'termination', label: UI_STRINGS[uiLang].catTermination },
-          ].map((cat) => {
+          ].filter(cat => {
+            if (role === 'admin') return true;
+            if (role === 'recruitment') return cat.id === 'employment';
+            if (role === 'legal') return cat.id === 'notice' || cat.id === 'termination';
+            return false;
+          }).map((cat) => {
             const isExpanded = expandedCats.includes(cat.id);
             const catTemplates = templates.filter(t => t.category === cat.id);
             
@@ -657,14 +748,15 @@ function App() {
         </nav>
 
         <div className="sidebar-footer">
-          {/* Security Decoder Tool */}
-          <div className="decoder-tool" style={{
-            background: '#f8fafc',
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px dashed #cbd5e1',
-            marginBottom: '12px'
-          }}>
+          {/* Security Decoder Tool (Admin Only) */}
+          {role === 'admin' && (
+            <div className="decoder-tool" style={{
+              background: '#f8fafc',
+              padding: '10px',
+              borderRadius: '8px',
+              border: '1px dashed #cbd5e1',
+              marginBottom: '12px'
+            }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: '#475569', fontWeight: 700, fontSize: '0.7rem' }}>
               <ShieldCheck size={14} /> {uiLang === 'zh' ? '防伪验证' : 'Authenticity Verification'}
             </div>
@@ -742,6 +834,7 @@ function App() {
               </div>
             )}
           </div>
+        )}
 
           <div className="version-info">
             {UI_STRINGS[uiLang].version}: v{pkg.version}
@@ -752,8 +845,30 @@ function App() {
         </div>
       </aside>
 
-      {/* ── Main ── */}
-        <main className="main-content">
+      {/* ── Main Area ── */}
+      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        {/* Global Header */}
+        <header className="main-header">
+          <div className="header-left">
+            <div className="identity-badge">
+              <ShieldCheck size={14} />
+              <span>{uiLang === 'zh' ? '当前职能' : 'Role'}: <strong>{roleLabel[role][uiLang]}</strong></span>
+            </div>
+            <div className="identity-badge staff-badge">
+              <FileText size={14} />
+              <span>{uiLang === 'zh' ? '工号' : 'ID'}: <strong>{staffId}</strong></span>
+            </div>
+          </div>
+          
+          <div className="header-right">
+            <button className="logout-btn-top" onClick={logout}>
+              <X size={16} />
+              <span>{uiLang === 'zh' ? '退出系统' : 'Logout'}</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="workspace-body" style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
           {sidebarCollapsed && (
             <div
               className="expand-handle sidebar-handle"
@@ -1067,7 +1182,10 @@ function App() {
 
         {/* Preview */}
         <section className="preview-pane">
-            <div className="controls">
+            <div className="controls" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
+              <Printer size={16} /> {UI_STRINGS[uiLang].printBtn}
+            </button>
             {batchMode && batchData.length > 0 && (
               <div className="batch-nav">
                 <button 
@@ -1089,9 +1207,6 @@ function App() {
                 </button>
               </div>
             )}
-            <button id="btn-print" className="btn btn-secondary" onClick={() => window.print()}>
-              <Printer size={16} /> {UI_STRINGS[uiLang].printBtn}
-            </button>
           </div>
 
           <div className="letter-paper" ref={letterRef}>
@@ -1181,7 +1296,8 @@ function App() {
             </footer>
           </div>
         </section>
-      </main>
+      </div>
+    </main>
       {/* --- Batch Generation Worker (Hidden) --- */}
       <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
         <div className="letter-paper" ref={batchWorkerRef}>
