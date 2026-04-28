@@ -15,7 +15,7 @@ export const terminationNotice = {
     { id: 'noticePeriod', label: { zh: '通知期', en: 'Notice Period' }, placeholder: '30 days / 1 month' },
     { id: 'statutoryComp', label: { zh: '法定赔偿金', en: 'Statutory Compensation' }, placeholder: '5,000' },
     { id: 'extraComp', label: { zh: '额外赔偿金', en: 'Extra Compensation' }, placeholder: '2,000' },
-    { id: 'reason', label: { zh: '解雇原因 (可选)', en: 'Reason (Optional)' }, placeholder: 'Operational redundancy' },
+    { id: 'reason', label: { zh: '解雇原因', en: 'Reason' }, placeholder: 'Operational redundancy' },
   ],
   content: {
     en: `Dear **{{employeeName}}**,
