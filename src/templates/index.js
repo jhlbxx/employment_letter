@@ -4,6 +4,7 @@ import { mortgageReference } from './mortgageReference';
 import { promotionLetter } from './promotionLetter';
 import { resignationAcceptance } from './resignationAcceptance';
 import { terminationNotice } from './terminationNotice';
+import { canadaTermination } from './canadaTermination';
 
 export const templates = [
   employmentVerification,
@@ -11,5 +12,6 @@ export const templates = [
   mortgageReference,
   promotionLetter,
   resignationAcceptance,
-  terminationNotice
+  terminationNotice,
+  canadaTermination
 ];

@@ -695,7 +695,7 @@ html {
 .letter-content {
   font-family: 'Calibri', 'Inter', sans-serif;
   font-size: 11pt;
-  line-height: 1.5;
+  line-height: 1.2;
   /* Updated from 1.2 */
   text-align: left;
   white-space: pre-wrap;

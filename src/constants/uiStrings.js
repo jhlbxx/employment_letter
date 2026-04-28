@@ -75,7 +75,7 @@ export const UI_STRINGS = {
   }
 };
 
-export const CURRENCY_FIELDS = ['salary', 'monthlyBase', 'annualSalary', 'bonus', 'annualBonus', 'statutoryComp', 'extraComp'];
+export const CURRENCY_FIELDS = ['salary', 'monthlyBase', 'annualSalary', 'bonus', 'annualBonus', 'statutoryComp', 'extraComp', 'grossSalary'];
 export const UNIT_FIELDS = ['noticePeriod'];
 
 export const UNIT_TRANSLATIONS = {
