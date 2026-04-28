@@ -74,6 +74,7 @@ export default function AccessGate({
               type="text" 
               placeholder="e.g. 007" 
               autoComplete="off"
+              autoFocus
               value={localStaffId} 
               onChange={(e) => setLocalStaffId(e.target.value)} 
               style={{ pointerEvents: 'auto' }}

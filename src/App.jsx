@@ -119,11 +119,22 @@ function App() {
 
   const logout = () => {
     if (window.confirm(uiLang === 'zh' ? '确定要退出系统吗？' : 'Are you sure you want to logout?')) {
+      // 1. Reset all critical states
       setIsAuthorized(false);
       setStaffId('');
       setAccessCode('');
       setRole(null);
       setIsResizing(false);
+      setBatchMode(false);
+      setIsProcessingBatch(false);
+      setIsEditModalOpen(false);
+      
+      // 2. Clear sensitive info from localStorage if needed
+      // localStorage.removeItem('hr_staff_id'); // Optional: keep or remove? User probably wants to keep it for convenience.
+      
+      // 3. Force a complete reload to clear any ghost overlays or stuck event listeners
+      // This is the most robust way to ensure the next login is clean, especially in Electron.
+      window.location.reload();
     }
   };
 
@@ -280,21 +291,36 @@ function App() {
   };
 
   const exportPDF = async () => {
+    // 1. Clear any potential interaction locks immediately
+    setIsResizing(false);
+    
     if (!letterRef.current || exporting) return;
-    if (!formData.employeeName || formData.employeeName.trim() === '') {
+
+    // 2. Defensive validation
+    const nameValue = formData.employeeName ? formData.employeeName.trim() : '';
+    if (!nameValue) {
+      // Force focus back to the input field so the user can type immediately
+      const nameInput = document.getElementById('field-employeeName');
+      if (nameInput) {
+        nameInput.focus();
+        nameInput.style.borderColor = '#ef4444'; // Visual hint
+        setTimeout(() => { nameInput.style.borderColor = ''; }, 2000);
+      }
+      
       alert(uiLang === 'zh' ? '无法导出：请输入收信人姓名！' : 'Cannot export: Please enter the Recipient Name!');
       return;
     }
+
     setExporting(true);
     try {
-      const finalFilename = sanitizeFilename(`${formData.employeeName} - Daves fish and chips - ${selectedTemplate.name[uiLang]}.pdf`);
+      const finalFilename = sanitizeFilename(`${nameValue} - Daves fish and chips - ${selectedTemplate.name[uiLang]}.pdf`);
       await html2pdf().set({
         margin: 0, 
         filename: finalFilename, 
         image: { type: 'jpeg', quality: 0.98 },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
         html2canvas: { 
-          scale: 2, // 降低到 2 倍，提高 Electron 环境下的渲染成功率
+          scale: 2, 
           useCORS: true, 
           letterRendering: true 
         },
